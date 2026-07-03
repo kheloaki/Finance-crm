@@ -78,12 +78,14 @@ export default function SettingsPage() {
     documentTemplate: DEFAULT_DOCUMENT_TEMPLATE as DocumentTemplateId,
     documentColor: DEFAULT_DOCUMENT_COLOR as DocumentColorId,
   });
+  const orgId = org?._id;
+  const orgName = org?.name;
 
   useEffect(() => {
-    if (settings === undefined || !org) return;
+    if (settings === undefined || !orgName) return;
 
     setForm({
-      sellerName: settings?.sellerName ?? org.name,
+      sellerName: settings?.sellerName ?? orgName,
       sellerActivity: settings?.sellerActivity ?? "",
       sellerAddress: settings?.sellerAddress ?? "",
       sellerPhone: settings?.sellerPhone ?? "",
@@ -103,7 +105,7 @@ export default function SettingsPage() {
     setLogoPreview(settings?.logoUrl);
     setCachetPreview(settings?.cachetUrl);
     setSaved(false);
-  }, [settings, org?._id, org?.name]);
+  }, [settings, orgId, orgName]);
 
   const previewSettings = useMemo(
     () => ({

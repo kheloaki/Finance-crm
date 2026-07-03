@@ -1189,7 +1189,7 @@ function drawTotalsBlueproRight(ctx: PdfRenderContext, y: number, x: number, wid
 
 /** Studio preview — Solde dû pill */
 function drawTotalsStudio(ctx: PdfRenderContext, y: number) {
-  const { doc, totalHt, vatAmount, netToPay, theme } = ctx;
+  const { doc, totalHt, vatAmount, netToPay } = ctx;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   textRgb(doc, [17, 24, 39]);
@@ -1630,7 +1630,7 @@ function renderRoyal(ctx: PdfRenderContext) {
 }
 
 function renderGeometric(ctx: PdfRenderContext) {
-  const { doc, margin, label, number, sellerName, sellerActivity, theme } = ctx;
+  const { doc, margin, label, number, sellerName, sellerActivity } = ctx;
   fillRgb(doc, [245, 245, 245]);
   doc.rect(0, 0, 210, 36, "F");
   fillRgb(doc, [212, 212, 212]);
@@ -1809,7 +1809,7 @@ function renderInterim(ctx: PdfRenderContext) {
 }
 
 function renderBluepro(ctx: PdfRenderContext) {
-  const { doc, margin, label, number, sellerName, sellerAddress, theme } = ctx;
+  const { doc, margin, label, number, sellerName, sellerAddress } = ctx;
   let y = margin;
   if (ctx.logoDataUrl) {
     drawLogo(ctx, margin, y, 10, 8);

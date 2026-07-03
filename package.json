@@ -9,9 +9,9 @@
     "convex:init": "convex dev --env-file .env --once && npm run convex:sync && npm run auth:setup",
     "dev:all": "npm run dev:convex & npm run dev",
     "auth:setup": "node scripts/setup-convex-auth-env.mjs --env-file .env",
-    "convex:deploy": "convex deploy --env-file .env",
+    "convex:deploy": "convex deploy",
     "build": "next build",
-    "build:prod": "convex deploy --env-file .env --cmd 'next build'",
+    "build:prod": "convex deploy --cmd 'next build'",
     "start": "next start",
     "lint": "eslint"
   },
