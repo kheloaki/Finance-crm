@@ -11,7 +11,7 @@
     "auth:setup": "node scripts/setup-convex-auth-env.mjs --env-file .env",
     "convex:deploy": "convex deploy",
     "build": "next build",
-    "build:prod": "convex deploy --cmd 'next build'",
+    "build:prod": "convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL --cmd 'next build'",
     "start": "next start",
     "lint": "eslint"
   },
