@@ -51,13 +51,13 @@ export function DashboardKpiStrip({ stats }: { stats: DashboardStats | undefined
         const raw = stats[key];
         const display = format ? formatMoney(raw) : String(raw);
         return (
-          <div key={key} className={cn(dashboardCardClass, "p-4 sm:p-5")}>
-            <div className="flex items-start justify-between gap-3">
+          <div key={key} className={cn(dashboardCardClass, "p-3 sm:p-4")}>
+            <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9CA3AF]">
                   {label}
                 </p>
-                <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-ink">
+                <p className="mt-1.5 text-2xl font-semibold tabular-nums tracking-tight text-ink">
                   {display}
                   {suffix ? (
                     <span className="text-sm font-medium text-[#9CA3AF]">{suffix}</span>
@@ -66,7 +66,7 @@ export function DashboardKpiStrip({ stats }: { stats: DashboardStats | undefined
               </div>
               <div
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
                   iconWrap,
                 )}
               >

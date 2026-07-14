@@ -37,7 +37,6 @@ export default function ClientsPageClient() {
   return (
     <EntityCrudPanel<ClientRow>
       title="Clients"
-      description="Gérez votre référentiel clients pour les devis, factures et bons de livraison."
       items={clients}
       fields={FIELDS}
       emptyLabel="Aucun client enregistré."

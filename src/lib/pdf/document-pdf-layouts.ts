@@ -39,6 +39,7 @@ export type PdfRenderContext = {
   sellerLegal: string;
   sellerContact: string;
   logoDataUrl?: string | null;
+  logoAspect?: number;
   cachetDataUrl?: string | null;
   cachetAspect?: number;
   cachetPlacement?: CachetPlacement;
@@ -144,11 +145,22 @@ function textAccent(ctx: PdfRenderContext) {
   textRgb(ctx.doc, hexToRgb(ctx.theme.accent));
 }
 
-function drawLogo(ctx: PdfRenderContext, x: number, y: number, maxW = 18, maxH = 12) {
+function drawLogo(ctx: PdfRenderContext, x: number, y: number, maxW = 28, maxH = 18) {
   if (!ctx.logoDataUrl) return;
+  let w = maxW;
+  let h = maxH;
+  if (ctx.logoAspect && ctx.logoAspect > 0) {
+    if (ctx.logoAspect >= maxW / maxH) {
+      w = maxW;
+      h = maxW / ctx.logoAspect;
+    } else {
+      h = maxH;
+      w = maxH * ctx.logoAspect;
+    }
+  }
   try {
     const fmt = ctx.logoDataUrl.includes("image/png") ? "PNG" : "JPEG";
-    ctx.doc.addImage(ctx.logoDataUrl, fmt, x, y, maxW, maxH, undefined, "FAST");
+    ctx.doc.addImage(ctx.logoDataUrl, fmt, x, y, w, h, undefined, "MEDIUM");
   } catch {
     // skip invalid image
   }
@@ -278,6 +290,8 @@ function drawSpreadsheetTable(
   const headers = delivery
     ? ["Réf.", "Désignation", "Unité", "Qté"]
     : ["Réf.", "Désignation", "U", "Qté", "PU HT", "TTC"];
+  const lineHeight = 4.2;
+  const cellPad = 2;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
@@ -293,7 +307,7 @@ function drawSpreadsheetTable(
     doc.rect(margin, y, tableW, 8, "F");
     y += 0;
   }
-  let x = margin + 2;
+  let x = margin + cellPad;
   headers.forEach((h, i) => {
     doc.text(h, x, y + 5.5);
     x += colWidths[i];
@@ -308,12 +322,7 @@ function drawSpreadsheetTable(
       doc.addPage();
       y = margin;
     }
-    if (rowIndex % 2 === 1) {
-      fillRgb(doc, stripeRgb);
-      doc.rect(margin, y - 1, tableW, 8, "F");
-      textRgb(doc, [17, 24, 39]);
-    }
-    x = margin + 2;
+
     const cells = delivery
       ? [line.reference || "—", line.designation, line.unit, String(line.qty)]
       : [
@@ -324,11 +333,28 @@ function drawSpreadsheetTable(
           formatMoney(line.unitPriceHt),
           formatMoney(lineTtc(line.qty, line.unitPriceHt, vatRate)),
         ];
-    cells.forEach((cell, i) => {
-      doc.text(doc.splitTextToSize(cell, colWidths[i] - 2), x, y + 4);
+
+    const wrappedCells = cells.map((cell, i) =>
+      doc.splitTextToSize(String(cell), Math.max(8, colWidths[i] - cellPad)),
+    );
+    const maxLines = Math.max(1, ...wrappedCells.map((w) => w.length));
+    const rowH = Math.max(8, maxLines * lineHeight + 3);
+
+    if (rowIndex % 2 === 1) {
+      fillRgb(doc, stripeRgb);
+      doc.rect(margin, y, tableW, rowH, "F");
+      textRgb(doc, [17, 24, 39]);
+    }
+
+    x = margin + cellPad;
+    wrappedCells.forEach((wrapped, i) => {
+      const align = !delivery && i >= 4 ? ("right" as const) : undefined;
+      doc.text(wrapped, x + (align === "right" ? colWidths[i] - cellPad : 0), y + 4, {
+        align,
+      });
       x += colWidths[i];
     });
-    y += 8;
+    y += rowH;
   });
 
   for (const line of lines.filter((l) => l.isNote && l.designation.trim())) {
@@ -339,9 +365,11 @@ function drawSpreadsheetTable(
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
     textRgb(doc, [120, 113, 108]);
-    doc.text(doc.splitTextToSize(line.designation, 175), margin + 2, y + 4);
+    const noteLines = doc.splitTextToSize(line.designation, tableW - cellPad * 2);
+    const noteH = Math.max(8, noteLines.length * lineHeight + 2);
+    doc.text(noteLines, margin + cellPad, y + 4);
     doc.setFont("helvetica", "normal");
-    y += 8;
+    y += noteH;
   }
 
   return y;
@@ -642,31 +670,66 @@ function drawTotalsClassic(ctx: PdfRenderContext, y: number) {
   return y + 18;
 }
 
-function drawCounterpartyTag(ctx: PdfRenderContext, x: number, y: number, align: "left" | "right" = "left") {
+function estimateCounterpartyHeight(ctx: PdfRenderContext, maxWidth: number): number {
+  const { doc, counterpartyName, counterpartyIce, counterpartyRepresentative } = ctx;
+  let lines = 1;
+  lines += doc.splitTextToSize(counterpartyName || "—", maxWidth).length;
+  if (counterpartyRepresentative?.trim()) {
+    lines += doc.splitTextToSize(
+      `Représentée par ${counterpartyRepresentative.trim()}`,
+      maxWidth,
+    ).length;
+  }
+  if (counterpartyIce) {
+    lines += doc.splitTextToSize(`ICE : ${counterpartyIce}`, maxWidth).length;
+  }
+  return Math.max(22, 8 + lines * 4.2);
+}
+
+function drawCounterpartyTag(
+  ctx: PdfRenderContext,
+  x: number,
+  y: number,
+  align: "left" | "right" = "left",
+  maxWidth?: number,
+) {
   const { doc, counterpartyLabel, counterpartyName, counterpartyIce, counterpartyRepresentative } = ctx;
+  const textOpts = align === "right" ? ({ align: "right" as const } as const) : undefined;
+  const wrap = (text: string, width: number) => doc.splitTextToSize(text, width);
+
   textPrimaryDark(ctx);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
-  const ax = align === "right" ? x : x;
-  doc.text(counterpartyLabel.toUpperCase(), ax, y, align === "right" ? { align: "right" } : undefined);
-  doc.setFontSize(10);
+  doc.text(counterpartyLabel.toUpperCase(), x, y, textOpts);
+
+  let lineY = y + 4.5;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
   textRgb(doc, [15, 23, 42]);
-  doc.text(counterpartyName || "—", ax, y + 5, align === "right" ? { align: "right" } : undefined);
-  let lineY = y + 10;
+  const nameText = counterpartyName || "—";
+  const nameLines = maxWidth ? wrap(nameText, maxWidth) : [nameText];
+  doc.text(nameLines, x, lineY, textOpts);
+  lineY += nameLines.length * 4.2;
+
   if (counterpartyRepresentative?.trim()) {
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     textRgb(doc, [71, 85, 105]);
-    doc.text(`Représentée par ${counterpartyRepresentative.trim()}`, ax, lineY, {
-      align: align === "right" ? "right" : "left",
-    });
-    lineY += 5;
+    const repLines = maxWidth
+      ? wrap(`Représentée par ${counterpartyRepresentative.trim()}`, maxWidth)
+      : [`Représentée par ${counterpartyRepresentative.trim()}`];
+    doc.text(repLines, x, lineY, textOpts);
+    lineY += repLines.length * 4;
   }
   if (counterpartyIce) {
     doc.setFontSize(8);
     textRgb(doc, [71, 85, 105]);
-    doc.text(`ICE : ${counterpartyIce}`, ax, lineY, align === "right" ? { align: "right" } : undefined);
+    const iceLines = maxWidth ? wrap(`ICE : ${counterpartyIce}`, maxWidth) : [`ICE : ${counterpartyIce}`];
+    doc.text(iceLines, x, lineY, textOpts);
+    lineY += iceLines.length * 4;
   }
+
+  return lineY;
 }
 
 function renderClassic(ctx: PdfRenderContext) {
@@ -675,7 +738,7 @@ function renderClassic(ctx: PdfRenderContext) {
   doc.rect(0, 0, 210, 50, "F");
 
   let y = 10;
-  drawLogo(ctx, margin, y);
+  drawLogo(ctx, margin, y, 32, 20);
   const boxW = 92;
   const boxH = sellerActivity ? 16 : 11;
   strokeRgb(doc, [226, 232, 240]);
@@ -697,11 +760,17 @@ function renderClassic(ctx: PdfRenderContext) {
   doc.line(margin, y, 196, y);
   y += 5;
 
+  const clientBoxX = 126;
+  const clientBoxW = 70;
+  const clientPad = 3;
+  const clientContentW = clientBoxW - clientPad * 2;
+  const clientTextX = clientBoxX + clientBoxW - clientPad;
+  const clientBoxH = estimateCounterpartyHeight(ctx, clientContentW);
   fillMuted(ctx);
   strokeRgb(doc, hexToRgb(theme.surfaceBorder));
-  doc.roundedRect(128, y, 68, 22, 2, 2, "FD");
-  drawCounterpartyTag(ctx, 192, y + 3, "right");
-  y += 28;
+  doc.roundedRect(clientBoxX, y, clientBoxW, clientBoxH, 2, 2, "FD");
+  drawCounterpartyTag(ctx, clientTextX, y + 4, "right", clientContentW);
+  y += clientBoxH + 6;
 
   fillPrimary(ctx);
   doc.roundedRect(margin, y + 1, 3, 8, 1, 1, "F");
@@ -733,8 +802,8 @@ function renderModern(ctx: PdfRenderContext) {
   if (ctx.logoDataUrl) {
     drawLogo(ctx, margin, 8, 14, 10);
     sellerTextX = margin + 17;
-  } else {
-    const initials = sellerName.slice(0, 2).toUpperCase() || "AP";
+  } else if (sellerName.trim()) {
+    const initials = sellerName.slice(0, 2).toUpperCase();
     fillRgb(doc, blendRgb(theme.primaryRgb, [255, 255, 255], 0.22));
     doc.roundedRect(margin, 8, 11, 11, 2, 2, "F");
     textOnPrimary(ctx);
@@ -744,14 +813,16 @@ function renderModern(ctx: PdfRenderContext) {
     sellerTextX = margin + 14;
   }
 
-  textOnPrimary(ctx);
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text(sellerName, sellerTextX, 14);
-  if (sellerActivity) {
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.text(sellerActivity, sellerTextX, 19);
+  if (sellerName.trim()) {
+    textOnPrimary(ctx);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(sellerName, sellerTextX, 14);
+    if (sellerActivity) {
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.text(sellerActivity, sellerTextX, 19);
+    }
   }
 
   doc.setFontSize(12);
@@ -1882,19 +1953,21 @@ function renderStudio(ctx: PdfRenderContext) {
   let y = margin;
   if (ctx.logoDataUrl) {
     drawLogo(ctx, margin, y, 14, 8);
-  } else {
+  } else if (sellerName.trim()) {
     fillPrimary(ctx);
     doc.roundedRect(margin, y, 14, 8, 1, 1, "F");
-    const initials = sellerName.slice(0, 2).toUpperCase() || "AP";
+    const initials = sellerName.slice(0, 2).toUpperCase();
     textOnPrimary(ctx);
     doc.setFontSize(6);
     doc.setFont("helvetica", "bold");
     doc.text(initials, margin + 7, y + 5.5, { align: "center" });
   }
-  doc.setFontSize(10);
-  textRgb(doc, [17, 24, 39]);
-  doc.setFont("helvetica", "bold");
-  doc.text(sellerName.toUpperCase(), margin + 17, y + 5);
+  if (sellerName.trim()) {
+    doc.setFontSize(10);
+    textRgb(doc, [17, 24, 39]);
+    doc.setFont("helvetica", "bold");
+    doc.text(sellerName.toUpperCase(), margin + 17, y + 5);
+  }
   y += 12;
 
   strokeRgb(doc, theme.primaryRgb);

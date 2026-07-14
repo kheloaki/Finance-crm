@@ -16,12 +16,18 @@ import {
 import { cn } from "@/lib/utils";
 import type { LayoutProps } from "./types";
 import {
-  CounterpartyRepLine,
+  EditableLayoutFrame,
+  LayoutAdjustments,
+  LayoutCounterparty,
+  LayoutLines,
+  LayoutMetaBar,
+  LayoutNotes,
+  LayoutSettingsBanner,
+} from "./editable-parts";
+import {
   FooterLegal,
   LinesSpreadsheet,
   LogoMark,
-  NotesBlock,
-  PaperFrame,
   linesTableClass,
   renderProductLines,
   TotalsBanner,
@@ -30,7 +36,7 @@ import {
 /** 1 — Letterhead centré, client encadré à droite, grille totaux double colonne */
 export function ClassicLayout({ ctx }: LayoutProps) {
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <header className="shrink-0 bg-gradient-to-b from-slate-50 to-white px-[5%] pb-3 pt-4">
         <div className="flex gap-3">
           <LogoMark ctx={ctx} />
@@ -49,19 +55,11 @@ export function ClassicLayout({ ctx }: LayoutProps) {
         </div>
         <div className="mt-2 border-b" style={accentBorder(ctx)} />
         <div className="mt-2 flex justify-end">
-          <div
-            className="max-w-[45%] rounded-lg border px-3 py-2 text-right"
+          <LayoutCounterparty
+            ctx={ctx}
+            className="min-w-0 max-w-[45%] rounded-lg border px-3 py-2 text-right"
             style={clientBoxStyle(ctx)}
-          >
-            <p className="text-[0.7em] font-bold uppercase" style={accentMutedText(ctx)}>
-              {ctx.counterpartyLabel}
-            </p>
-            <p className="font-bold text-[#0f172a]">{ctx.counterpartyName || "—"}</p>
-            <CounterpartyRepLine ctx={ctx} />
-            {ctx.counterpartyIce ? (
-              <p className="text-[0.85em] text-slate-600">ICE : {ctx.counterpartyIce}</p>
-            ) : null}
-          </div>
+          />
         </div>
       </header>
 
@@ -72,39 +70,38 @@ export function ClassicLayout({ ctx }: LayoutProps) {
         </h1>
       </div>
 
-      <div className="flex flex-wrap gap-1.5 px-[5%] pb-2">
-        {[
-          ["Date", ctx.dateFormatted],
-          ...(ctx.dueDateFormatted ? [["Échéance", ctx.dueDateFormatted] as const] : []),
-        ].map(([k, v]) => (
-          <span key={k} className="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-[0.75em]">
-            <span className="text-slate-400">{k}</span> {v}
-          </span>
-        ))}
-      </div>
+      <LayoutMetaBar ctx={ctx} variant="chips" />
 
-      <div className={cn("mx-[5%] rounded border border-slate-200", linesTableClass)}>
-        <LinesSpreadsheet ctx={ctx} stripeStyle={{ backgroundColor: ctx.theme.surface }} />
-      </div>
+      <LayoutLines
+        ctx={ctx}
+        className={cn("mx-[5%] rounded border border-slate-200", linesTableClass)}
+        preview={
+          <LinesSpreadsheet ctx={ctx} stripeStyle={{ backgroundColor: ctx.theme.surface }} />
+        }
+      />
 
       {!ctx.deliveryNote ? (
-        <div className="mx-[5%] mb-2 grid grid-cols-5 gap-0 overflow-hidden rounded border border-slate-200 text-[0.75em]">
-          <div className="col-span-2 border-r border-slate-200 p-2">
-            <p className="font-bold text-slate-500">TVA {ctx.vatRate}%</p>
-            <p className="tabular-nums">{ctx.money(ctx.vatAmount)}</p>
+        <>
+          <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
+          <div className="mx-[5%] mb-2 grid grid-cols-5 gap-0 overflow-hidden rounded border border-slate-200 text-[0.75em]">
+            <div className="col-span-2 border-r border-slate-200 p-2">
+              <p className="font-bold text-slate-500">TVA {ctx.vatRate}%</p>
+              <p className="tabular-nums">{ctx.money(ctx.vatAmount)}</p>
+            </div>
+            <div className="col-span-3 p-2 text-center" style={primaryDarkBg(ctx)}>
+              <p style={{ color: ctx.theme.accent }}>Net à payer</p>
+              <p className="text-[1.2em] font-bold tabular-nums">{ctx.money(ctx.netToPay)}</p>
+            </div>
           </div>
-          <div className="col-span-3 p-2 text-center" style={primaryDarkBg(ctx)}>
-            <p style={{ color: ctx.theme.accent }}>Net à payer</p>
-            <p className="text-[1.2em] font-bold tabular-nums">{ctx.money(ctx.netToPay)}</p>
-          </div>
-        </div>
+        </>
       ) : null}
 
-      <NotesBlock ctx={ctx} className="mx-[5%] mb-2 rounded border border-slate-100 bg-slate-50 p-2" />
+      <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 rounded border border-slate-100 bg-slate-50 p-2" />
+      <LayoutSettingsBanner ctx={ctx} />
       <footer className="mt-auto border-t bg-slate-50 px-[5%] py-2 text-center text-slate-400">
         <FooterLegal ctx={ctx} />
       </footer>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
@@ -112,7 +109,7 @@ export function ClassicLayout({ ctx }: LayoutProps) {
 export function ModernLayout({ ctx }: LayoutProps) {
   const products = renderProductLines(ctx);
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <header className="shrink-0 px-[5%] py-4" style={bandStyle(ctx)}>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -128,6 +125,8 @@ export function ModernLayout({ ctx }: LayoutProps) {
         </div>
       </header>
 
+      <LayoutMetaBar ctx={ctx} className="mx-[5%]" />
+
       <div className="mx-[5%] -mt-3 mb-3 flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-lg ring-1 ring-slate-200">
         <div
           className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
@@ -135,52 +134,54 @@ export function ModernLayout({ ctx }: LayoutProps) {
         >
           {(ctx.counterpartyName || "?")[0]?.toUpperCase()}
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[0.65em] font-bold uppercase" style={accentText(ctx)}>
-            {ctx.counterpartyLabel}
-          </p>
-          <p className="truncate font-bold text-[#0f172a]">{ctx.counterpartyName || "—"}</p>
-          <CounterpartyRepLine ctx={ctx} />
-        </div>
+        <LayoutCounterparty ctx={ctx} className="min-w-0 flex-1" showIce={false} />
         {ctx.counterpartyIce ? (
           <span className="hidden text-[0.75em] text-slate-500 sm:block">ICE {ctx.counterpartyIce}</span>
         ) : null}
       </div>
 
-      <div className="mx-[5%] mb-2 max-h-[40%] shrink-0 space-y-1 overflow-y-auto">
-        {products.length === 0 ? (
-          <p className="py-8 text-center italic text-slate-400">Aucune ligne</p>
-        ) : (
-          products.map((line, i) => (
-            <div key={i} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2" style={lineCardStyle(ctx)}>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-[#0f172a]">{line.designation}</p>
-                <p className="text-[0.75em] text-slate-500">
-                  {line.qty} {line.unit}
-                  {!ctx.deliveryNote ? ` · HT ${ctx.money(line.unitPriceHt)}` : ""}
-                </p>
+      <LayoutLines
+        ctx={ctx}
+        className="mx-[5%] mb-2 max-h-[40%] shrink-0 space-y-1 overflow-y-auto"
+        preview={
+          products.length === 0 ? (
+            <p className="py-8 text-center italic text-slate-400">Aucune ligne</p>
+          ) : (
+            products.map((line, i) => (
+              <div key={i} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2" style={lineCardStyle(ctx)}>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-[#0f172a]">{line.designation}</p>
+                  <p className="text-[0.75em] text-slate-500">
+                    {line.qty} {line.unit}
+                    {!ctx.deliveryNote ? ` · HT ${ctx.money(line.unitPriceHt)}` : ""}
+                  </p>
+                </div>
+                {!ctx.deliveryNote ? (
+                  <p className="shrink-0 font-bold tabular-nums" style={accentText(ctx)}>
+                    {ctx.money(ctx.lineTtc(line))}
+                  </p>
+                ) : null}
               </div>
-              {!ctx.deliveryNote ? (
-                <p className="shrink-0 font-bold tabular-nums" style={accentText(ctx)}>
-                  {ctx.money(ctx.lineTtc(line))}
-                </p>
-              ) : null}
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )
+        }
+      />
 
       {!ctx.deliveryNote ? (
-        <div className="mx-[5%] mb-3">
-          <TotalsBanner ctx={ctx} style={gradientBannerStyle(ctx)} dark />
-        </div>
+        <>
+          <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
+          <div className="mx-[5%] mb-3">
+            <TotalsBanner ctx={ctx} style={gradientBannerStyle(ctx)} dark />
+          </div>
+        </>
       ) : null}
 
-      <NotesBlock ctx={ctx} className="mx-[5%] mb-2 rounded-lg p-2" style={surfaceStyle(ctx)} />
+      <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 rounded-lg p-2" style={surfaceStyle(ctx)} />
+      <LayoutSettingsBanner ctx={ctx} />
       <footer className="mt-auto px-[5%] py-2 text-center text-slate-500" style={{ backgroundColor: ctx.theme.surface }}>
         <FooterLegal ctx={ctx} />
       </footer>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
@@ -188,7 +189,7 @@ export function ModernLayout({ ctx }: LayoutProps) {
 export function MinimalLayout({ ctx }: LayoutProps) {
   const products = renderProductLines(ctx);
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <header className="border-b-2 px-[6%] py-4" style={{ borderColor: ctx.theme.primaryDark }}>
         <div className="flex justify-between gap-4">
           <div className="flex items-start gap-2">
@@ -212,73 +213,82 @@ export function MinimalLayout({ ctx }: LayoutProps) {
         </div>
       </header>
 
+      <LayoutMetaBar ctx={ctx} className="px-[6%]" />
+
       <section className="px-[6%] py-4">
-        <p className="text-[0.7em] font-bold uppercase tracking-widest text-neutral-400">
-          {ctx.counterpartyLabel}
-        </p>
-        <p className="mt-1 text-[1em] font-bold">{ctx.counterpartyName || "—"}</p>
-        <CounterpartyRepLine ctx={ctx} />
-        {ctx.addrLine ? <p className="text-[0.85em] text-neutral-500">{ctx.addrLine}</p> : null}
+        <LayoutCounterparty
+          ctx={ctx}
+          labelClassName="text-[0.7em] font-bold uppercase tracking-widest text-neutral-400"
+        />
       </section>
 
       <div className="mx-[6%] shrink-0 border-t" style={{ borderColor: ctx.theme.primaryDark }}>
-        {products.length === 0 ? (
-          <p className="py-6 text-center italic text-neutral-400">—</p>
-        ) : (
-          products.map((line, i) => (
-            <div key={i} className="flex items-baseline justify-between gap-4 border-b border-neutral-200 py-2.5">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium">{line.designation}</p>
+        <LayoutLines
+          ctx={ctx}
+          preview={
+          products.length === 0 ? (
+            <p className="py-6 text-center italic text-neutral-400">—</p>
+          ) : (
+            products.map((line, i) => (
+              <div key={i} className="flex items-baseline justify-between gap-4 border-b border-neutral-200 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{line.designation}</p>
+                  {!ctx.deliveryNote ? (
+                    <p className="text-[0.75em] text-neutral-400">
+                      {line.qty} × {ctx.money(line.unitPriceHt)} HT
+                    </p>
+                  ) : (
+                    <p className="text-[0.75em] text-neutral-400">
+                      {line.qty} {line.unit}
+                    </p>
+                  )}
+                </div>
                 {!ctx.deliveryNote ? (
-                  <p className="text-[0.75em] text-neutral-400">
-                    {line.qty} × {ctx.money(line.unitPriceHt)} HT
-                  </p>
-                ) : (
-                  <p className="text-[0.75em] text-neutral-400">
-                    {line.qty} {line.unit}
-                  </p>
-                )}
+                  <p className="shrink-0 tabular-nums font-medium">{ctx.money(ctx.lineTtc(line))}</p>
+                ) : null}
               </div>
-              {!ctx.deliveryNote ? (
-                <p className="shrink-0 tabular-nums font-medium">{ctx.money(ctx.lineTtc(line))}</p>
-              ) : null}
-            </div>
-          ))
-        )}
+            ))
+          )
+        }
+        />
       </div>
 
       {!ctx.deliveryNote ? (
-        <dl className="mx-[6%] mb-4 space-y-1 text-right text-[0.85em]">
-          <div className="flex justify-end gap-8">
-            <dt className="text-neutral-500">Total HT</dt>
-            <dd className="w-20 tabular-nums">{ctx.money(ctx.totalHt)}</dd>
-          </div>
-          <div className="flex justify-end gap-8">
-            <dt className="text-neutral-500">TVA</dt>
-            <dd className="w-20 tabular-nums">{ctx.money(ctx.vatAmount)}</dd>
-          </div>
-          <div
-            className="flex justify-end gap-8 border-t-2 pt-2 font-bold"
-            style={{ borderColor: ctx.theme.primaryDark }}
-          >
-            <dt>Net à payer</dt>
-            <dd className="w-20 tabular-nums">{ctx.money(ctx.netToPay)}</dd>
-          </div>
-        </dl>
+        <>
+          <LayoutAdjustments ctx={ctx} className="mx-[6%]" />
+          <dl className="mx-[6%] mb-4 space-y-1 text-right text-[0.85em]">
+            <div className="flex justify-end gap-8">
+              <dt className="text-neutral-500">Total HT</dt>
+              <dd className="w-20 tabular-nums">{ctx.money(ctx.totalHt)}</dd>
+            </div>
+            <div className="flex justify-end gap-8">
+              <dt className="text-neutral-500">TVA</dt>
+              <dd className="w-20 tabular-nums">{ctx.money(ctx.vatAmount)}</dd>
+            </div>
+            <div
+              className="flex justify-end gap-8 border-t-2 pt-2 font-bold"
+              style={{ borderColor: ctx.theme.primaryDark }}
+            >
+              <dt>Net à payer</dt>
+              <dd className="w-20 tabular-nums">{ctx.money(ctx.netToPay)}</dd>
+            </div>
+          </dl>
+        </>
       ) : null}
 
-      <NotesBlock
+      <LayoutNotes
         ctx={ctx}
         className="mx-[6%] mb-3 border-l-2 pl-3 italic"
         style={{ borderColor: ctx.theme.primary }}
       />
+      <LayoutSettingsBanner ctx={ctx} />
       <footer
         className="mt-auto border-t-2 px-[6%] py-2 text-center text-neutral-400"
         style={{ borderColor: ctx.theme.primaryDark }}
       >
         <FooterLegal ctx={ctx} />
       </footer>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
@@ -286,7 +296,7 @@ export function MinimalLayout({ ctx }: LayoutProps) {
 export function ExecutiveLayout({ ctx }: LayoutProps) {
   const products = renderProductLines(ctx);
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <header className="shrink-0 px-[5%] py-5" style={primaryDarkBg(ctx)}>
         <div className="flex items-end justify-between">
           <div>
@@ -303,86 +313,78 @@ export function ExecutiveLayout({ ctx }: LayoutProps) {
       </header>
 
       <div className="grid grid-cols-2 gap-3 px-[5%] py-3">
-        <div className="rounded-lg border p-3" style={clientBoxStyle(ctx)}>
-          <p className="text-[0.65em] font-bold uppercase" style={accentMutedText(ctx)}>
-            {ctx.counterpartyLabel}
-          </p>
-          <p className="text-[1.05em] font-bold">{ctx.counterpartyName || "—"}</p>
-          <CounterpartyRepLine ctx={ctx} />
-          {ctx.counterpartyIce ? <p className="text-[0.8em] text-slate-600">ICE {ctx.counterpartyIce}</p> : null}
-        </div>
-        <div className="space-y-2 text-[0.8em]">
-          <p>
-            <span className="text-slate-400">Date</span> <strong>{ctx.dateFormatted}</strong>
-          </p>
-          {ctx.dueDateFormatted ? (
-            <p>
-              <span className="text-slate-400">Échéance</span> <strong>{ctx.dueDateFormatted}</strong>
-            </p>
-          ) : null}
-        </div>
+        <LayoutCounterparty ctx={ctx} className="rounded-lg border p-3" style={clientBoxStyle(ctx)} />
+        <LayoutMetaBar ctx={ctx} variant="inline" />
       </div>
 
-      <div className="mx-[5%] mb-2 shrink-0 overflow-hidden">
-        <table className="w-full text-[0.8em]">
-          <thead>
-            <tr className="border-b-2 text-left text-[0.7em] uppercase tracking-wider" style={{ borderColor: ctx.theme.primaryDark }}>
-              <th className="py-1.5">Description</th>
-              <th className="py-1.5 text-right">Qté</th>
-              {!ctx.deliveryNote ? <th className="py-1.5 text-right">Montant</th> : null}
-            </tr>
-          </thead>
-          <tbody>
-            {products.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="py-6 text-center italic text-slate-400">
-                  Aucune ligne
-                </td>
+      <LayoutLines
+        ctx={ctx}
+        className="mx-[5%] mb-2 shrink-0 overflow-hidden"
+        preview={
+          <table className="w-full text-[0.8em]">
+            <thead>
+              <tr className="border-b-2 text-left text-[0.7em] uppercase tracking-wider" style={{ borderColor: ctx.theme.primaryDark }}>
+                <th className="py-1.5">Description</th>
+                <th className="py-1.5 text-right">Qté</th>
+                {!ctx.deliveryNote ? <th className="py-1.5 text-right">Montant</th> : null}
               </tr>
-            ) : (
-              products.map((line, i) => (
-                <tr key={i} className="border-b border-neutral-100">
-                  <td className="py-2">
-                    <p className="font-medium">{line.designation}</p>
-                    <p className="text-[0.85em] text-slate-400">{line.reference}</p>
+            </thead>
+            <tbody>
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="py-6 text-center italic text-slate-400">
+                    Aucune ligne
                   </td>
-                  <td className="py-2 text-right tabular-nums">
-                    {line.qty} {line.unit}
-                  </td>
-                  {!ctx.deliveryNote ? (
-                    <td className="py-2 text-right font-semibold tabular-nums">
-                      {ctx.money(ctx.lineTtc(line))}
-                    </td>
-                  ) : null}
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                products.map((line, i) => (
+                  <tr key={i} className="border-b border-neutral-100">
+                    <td className="py-2">
+                      <p className="font-medium">{line.designation}</p>
+                      <p className="text-[0.85em] text-slate-400">{line.reference}</p>
+                    </td>
+                    <td className="py-2 text-right tabular-nums">
+                      {line.qty} {line.unit}
+                    </td>
+                    {!ctx.deliveryNote ? (
+                      <td className="py-2 text-right font-semibold tabular-nums">
+                        {ctx.money(ctx.lineTtc(line))}
+                      </td>
+                    ) : null}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        }
+      />
 
       {!ctx.deliveryNote ? (
-        <div className="mx-[5%] mb-3 rounded-xl py-4 text-center" style={primaryDarkBg(ctx)}>
-          <p className="text-[0.7em] uppercase tracking-[0.2em]" style={{ color: ctx.theme.accent }}>
-            Net à payer
-          </p>
-          <p className="text-[1.8em] font-black tabular-nums" style={{ color: ctx.theme.accent }}>
-            {ctx.money(ctx.netToPay)} <span className="text-[0.5em]">MAD</span>
-          </p>
-        </div>
+        <>
+          <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
+          <div className="mx-[5%] mb-3 rounded-xl py-4 text-center" style={primaryDarkBg(ctx)}>
+            <p className="text-[0.7em] uppercase tracking-[0.2em]" style={{ color: ctx.theme.accent }}>
+              Net à payer
+            </p>
+            <p className="text-[1.8em] font-black tabular-nums" style={{ color: ctx.theme.accent }}>
+              {ctx.money(ctx.netToPay)} <span className="text-[0.5em]">MAD</span>
+            </p>
+          </div>
+        </>
       ) : null}
 
+      <LayoutSettingsBanner ctx={ctx} />
       <footer className="mt-auto px-[5%] py-2 text-center text-neutral-500" style={primaryDarkBg(ctx)}>
         <FooterLegal ctx={ctx} />
       </footer>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
 /** 5 — Cadre double, grille comptable */
 export function CorporateLayout({ ctx }: LayoutProps) {
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <div
         className="flex h-full flex-col border-4 border-double m-2 p-3"
         style={{ borderColor: ctx.theme.primaryDark }}
@@ -420,59 +422,65 @@ export function CorporateLayout({ ctx }: LayoutProps) {
           </tbody>
         </table>
 
-        <div className="mb-2 border px-3 py-2" style={surfaceStyle(ctx)}>
-          <span className="text-[0.7em] font-bold uppercase" style={accentMutedText(ctx)}>
-            {ctx.counterpartyLabel} :{" "}
-          </span>
-          <span className="font-bold">{ctx.counterpartyName || "—"}</span>
-          <CounterpartyRepLine ctx={ctx} />
-          {ctx.counterpartyIce ? (
-            <span className="ml-2 text-[0.85em] text-slate-600">ICE {ctx.counterpartyIce}</span>
-          ) : null}
-        </div>
+        <LayoutMetaBar ctx={ctx} className="mb-2" />
 
-        <div className="mb-2 max-h-[40%] shrink-0 overflow-auto">
-          <LinesSpreadsheet ctx={ctx} stripeStyle={{ backgroundColor: ctx.theme.surface }} />
-        </div>
+        <LayoutCounterparty
+          ctx={ctx}
+          className="mb-2 border px-3 py-2"
+          style={surfaceStyle(ctx)}
+          labelClassName={cn("text-[0.7em] font-bold uppercase inline")}
+        />
+
+        <LayoutLines
+          ctx={ctx}
+          className="mb-2 max-h-[40%] shrink-0 overflow-auto"
+          preview={
+            <LinesSpreadsheet ctx={ctx} stripeStyle={{ backgroundColor: ctx.theme.surface }} />
+          }
+        />
 
         {!ctx.deliveryNote ? (
-          <table className="mb-2 w-full border-collapse text-[0.8em]">
-            <tbody>
-              <tr className="font-bold" style={{ backgroundColor: ctx.theme.surface }}>
-                <td className="border p-2" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                  Total HT
-                </td>
-                <td className="border p-2 text-right tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                  {ctx.money(ctx.totalHt)}
-                </td>
-                <td className="border p-2" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                  TVA
-                </td>
-                <td className="border p-2 text-right tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                  {ctx.money(ctx.vatAmount)}
-                </td>
-              </tr>
-              <tr style={primaryDarkBg(ctx)}>
-                <td colSpan={3} className="border p-2 font-bold" style={{ borderColor: ctx.theme.primaryDark }}>
-                  NET À PAYER
-                </td>
-                <td
-                  className="border p-2 text-right text-[1.1em] font-black tabular-nums"
-                  style={{ borderColor: ctx.theme.primaryDark }}
-                >
-                  {ctx.money(ctx.netToPay)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <>
+            <LayoutAdjustments ctx={ctx} className="mb-2" />
+            <table className="mb-2 w-full border-collapse text-[0.8em]">
+              <tbody>
+                <tr className="font-bold" style={{ backgroundColor: ctx.theme.surface }}>
+                  <td className="border p-2" style={{ borderColor: ctx.theme.surfaceBorder }}>
+                    Total HT
+                  </td>
+                  <td className="border p-2 text-right tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
+                    {ctx.money(ctx.totalHt)}
+                  </td>
+                  <td className="border p-2" style={{ borderColor: ctx.theme.surfaceBorder }}>
+                    TVA
+                  </td>
+                  <td className="border p-2 text-right tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
+                    {ctx.money(ctx.vatAmount)}
+                  </td>
+                </tr>
+                <tr style={primaryDarkBg(ctx)}>
+                  <td colSpan={3} className="border p-2 font-bold" style={{ borderColor: ctx.theme.primaryDark }}>
+                    NET À PAYER
+                  </td>
+                  <td
+                    className="border p-2 text-right text-[1.1em] font-black tabular-nums"
+                    style={{ borderColor: ctx.theme.primaryDark }}
+                  >
+                    {ctx.money(ctx.netToPay)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </>
         ) : null}
 
-        <NotesBlock ctx={ctx} className="mb-2 border p-2 text-[0.85em]" style={surfaceStyle(ctx)} />
+        <LayoutNotes ctx={ctx} className="mb-2 border p-2 text-[0.85em]" style={surfaceStyle(ctx)} />
+        <LayoutSettingsBanner ctx={ctx} />
         <footer className="mt-auto border-t pt-2 text-center" style={{ borderColor: ctx.theme.surfaceBorder, ...accentMutedText(ctx) }}>
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
@@ -480,7 +488,7 @@ export function CorporateLayout({ ctx }: LayoutProps) {
 export function FreshLayout({ ctx }: LayoutProps) {
   const products = renderProductLines(ctx);
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <div className="flex h-full flex-col p-3" style={{ background: `linear-gradient(to bottom, ${ctx.theme.surface}, white)` }}>
         <div className="mb-2 rounded-2xl bg-white p-3 shadow-sm ring-1" style={{ borderColor: ctx.theme.surfaceBorder }}>
           <div className="flex items-center gap-2">
@@ -499,14 +507,15 @@ export function FreshLayout({ ctx }: LayoutProps) {
           </div>
         </div>
 
+        <LayoutMetaBar ctx={ctx} className="mb-2" />
+
         <div className="mb-2 grid grid-cols-2 gap-2">
-          <div className="rounded-2xl bg-white p-3 shadow-sm ring-1" style={{ borderColor: ctx.theme.surfaceBorder }}>
-            <p className="text-[0.65em] font-bold uppercase" style={accentText(ctx)}>
-              {ctx.counterpartyLabel}
-            </p>
-            <p className="font-bold">{ctx.counterpartyName || "—"}</p>
-            <CounterpartyRepLine ctx={ctx} />
-          </div>
+          <LayoutCounterparty
+            ctx={ctx}
+            className="rounded-2xl bg-white p-3 shadow-sm ring-1"
+            style={{ borderColor: ctx.theme.surfaceBorder }}
+            labelClassName="text-[0.65em] font-bold uppercase"
+          />
           <div className="rounded-2xl p-3 shadow-sm" style={primaryBg(ctx)}>
             <p className="text-[0.65em] uppercase opacity-80">Document</p>
             <p className="font-bold">#{ctx.number}</p>
@@ -514,42 +523,50 @@ export function FreshLayout({ ctx }: LayoutProps) {
           </div>
         </div>
 
-        <div className="mb-2 max-h-[40%] shrink-0 space-y-1.5 overflow-y-auto">
-          {products.length === 0 ? (
-            <p className="py-6 text-center italic" style={accentText(ctx)}>
-              Aucune ligne
-            </p>
-          ) : (
-            products.map((line, i) => (
-              <div key={i} className="flex justify-between rounded-2xl bg-white px-3 py-2 shadow-sm ring-1" style={lineCardStyle(ctx)}>
-                <span className="truncate font-medium">{line.designation}</span>
-                {!ctx.deliveryNote ? (
-                  <span className="ml-2 shrink-0 font-bold tabular-nums" style={accentText(ctx)}>
-                    {ctx.money(ctx.lineTtc(line))}
-                  </span>
-                ) : (
-                  <span className="text-[0.85em]" style={accentText(ctx)}>
-                    {line.qty} {line.unit}
-                  </span>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+        <LayoutLines
+          ctx={ctx}
+          className="mb-2 max-h-[40%] shrink-0 space-y-1.5 overflow-y-auto"
+          preview={
+            products.length === 0 ? (
+              <p className="py-6 text-center italic" style={accentText(ctx)}>
+                Aucune ligne
+              </p>
+            ) : (
+              products.map((line, i) => (
+                <div key={i} className="flex justify-between rounded-2xl bg-white px-3 py-2 shadow-sm ring-1" style={lineCardStyle(ctx)}>
+                  <span className="truncate font-medium">{line.designation}</span>
+                  {!ctx.deliveryNote ? (
+                    <span className="ml-2 shrink-0 font-bold tabular-nums" style={accentText(ctx)}>
+                      {ctx.money(ctx.lineTtc(line))}
+                    </span>
+                  ) : (
+                    <span className="text-[0.85em]" style={accentText(ctx)}>
+                      {line.qty} {line.unit}
+                    </span>
+                  )}
+                </div>
+              ))
+            )
+          }
+        />
 
         {!ctx.deliveryNote ? (
-          <div className="mb-2 rounded-2xl p-4 text-center shadow-md" style={gradientBannerStyle(ctx)}>
-            <p className="text-[0.7em] uppercase opacity-90">Total TTC</p>
-            <p className="text-[1.4em] font-black tabular-nums">{ctx.money(ctx.totalTtc)}</p>
-            <p className="mt-1 text-[0.85em]">Net : {ctx.money(ctx.netToPay)} MAD</p>
-          </div>
+          <>
+            <LayoutAdjustments ctx={ctx} className="mb-2" />
+            <div className="mb-2 rounded-2xl p-4 text-center shadow-md" style={gradientBannerStyle(ctx)}>
+              <p className="text-[0.7em] uppercase opacity-90">Total TTC</p>
+              <p className="text-[1.4em] font-black tabular-nums">{ctx.money(ctx.totalTtc)}</p>
+              <p className="mt-1 text-[0.85em]">Net : {ctx.money(ctx.netToPay)} MAD</p>
+            </div>
+          </>
         ) : null}
 
+        <LayoutSettingsBanner ctx={ctx} />
         <footer className="text-center text-[0.75em]" style={accentMutedText(ctx)}>
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
@@ -557,7 +574,7 @@ export function FreshLayout({ ctx }: LayoutProps) {
 export function WarmLayout({ ctx }: LayoutProps) {
   const products = renderProductLines(ctx);
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <div className="flex h-full flex-col p-4" style={{ backgroundColor: ctx.theme.primaryMuted }}>
         <div className="flex items-start gap-2 border-b-4 pb-3" style={{ borderColor: ctx.theme.primary }}>
           <LogoMark ctx={ctx} />
@@ -582,66 +599,76 @@ export function WarmLayout({ ctx }: LayoutProps) {
           </p>
         </div>
 
-        <blockquote className="my-3 border-l-4 py-2 pl-4 pr-2" style={{ ...clientBoxStyle(ctx), borderLeftColor: ctx.theme.primary }}>
-          <p className="text-[0.65em] font-bold uppercase" style={accentText(ctx)}>
-            {ctx.counterpartyLabel}
-          </p>
-          <p className="font-serif text-[1.05em] font-bold italic" style={{ color: ctx.theme.primaryDark }}>
-            {ctx.counterpartyName || "—"}
-          </p>
-          <CounterpartyRepLine ctx={ctx} />
+        <LayoutMetaBar ctx={ctx} className="my-2" />
+
+        <blockquote
+          className="my-3 border-l-4 py-2 pl-4 pr-2"
+          style={{ ...clientBoxStyle(ctx), borderLeftColor: ctx.theme.primary }}
+        >
+          <LayoutCounterparty
+            ctx={ctx}
+            labelClassName="text-[0.65em] font-bold uppercase"
+          />
         </blockquote>
 
-        <div className="mb-2 max-h-[40%] shrink-0 space-y-3 overflow-y-auto">
-          {products.length === 0 ? (
-            <p className="italic" style={accentText(ctx)}>
-              Aucune ligne
-            </p>
-          ) : (
-            products.map((line, i) => (
-              <div key={i} className="border-b pb-2" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                <p className="font-serif text-[1em] font-semibold" style={{ color: ctx.theme.primaryDark }}>
-                  {line.designation}
-                </p>
-                <div className="mt-0.5 flex justify-between text-[0.8em]" style={accentMutedText(ctx)}>
-                  <span>
-                    {line.reference} · {line.qty} {line.unit}
-                  </span>
-                  {!ctx.deliveryNote ? (
-                    <span className="font-bold tabular-nums">{ctx.money(ctx.lineTtc(line))}</span>
-                  ) : null}
+        <LayoutLines
+          ctx={ctx}
+          className="mb-2 max-h-[40%] shrink-0 space-y-3 overflow-y-auto"
+          preview={
+            products.length === 0 ? (
+              <p className="italic" style={accentText(ctx)}>
+                Aucune ligne
+              </p>
+            ) : (
+              products.map((line, i) => (
+                <div key={i} className="border-b pb-2" style={{ borderColor: ctx.theme.surfaceBorder }}>
+                  <p className="font-serif text-[1em] font-semibold" style={{ color: ctx.theme.primaryDark }}>
+                    {line.designation}
+                  </p>
+                  <div className="mt-0.5 flex justify-between text-[0.8em]" style={accentMutedText(ctx)}>
+                    <span>
+                      {line.reference} · {line.qty} {line.unit}
+                    </span>
+                    {!ctx.deliveryNote ? (
+                      <span className="font-bold tabular-nums">{ctx.money(ctx.lineTtc(line))}</span>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )
+          }
+        />
 
         {!ctx.deliveryNote ? (
-          <div className="flex items-center justify-end gap-3">
-            <div className="text-right text-[0.85em]">
-              <p>TTC {ctx.money(ctx.totalTtc)}</p>
+          <>
+            <LayoutAdjustments ctx={ctx} className="mb-2" />
+            <div className="flex items-center justify-end gap-3">
+              <div className="text-right text-[0.85em]">
+                <p>TTC {ctx.money(ctx.totalTtc)}</p>
+              </div>
+              <div className="flex h-16 w-16 flex-col items-center justify-center rounded-full shadow-lg" style={primaryBg(ctx)}>
+                <span className="text-[0.55em] uppercase">Net</span>
+                <span className="text-[0.75em] font-bold tabular-nums leading-none">
+                  {ctx.money(ctx.netToPay)}
+                </span>
+              </div>
             </div>
-            <div className="flex h-16 w-16 flex-col items-center justify-center rounded-full shadow-lg" style={primaryBg(ctx)}>
-              <span className="text-[0.55em] uppercase">Net</span>
-              <span className="text-[0.75em] font-bold tabular-nums leading-none">
-                {ctx.money(ctx.netToPay)}
-              </span>
-            </div>
-          </div>
+          </>
         ) : null}
 
+        <LayoutSettingsBanner ctx={ctx} />
         <footer className="mt-auto pt-2 text-center text-[0.75em]" style={accentMutedText(ctx)}>
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
 /** 8 — Sidebar verticale + tableau */
 export function OceanLayout({ ctx }: LayoutProps) {
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <div className="flex min-h-0 shrink-0 flex-col">
         <div className="flex shrink-0">
           <aside className="flex w-[14%] shrink-0 flex-col items-center py-4" style={bandStyleVertical(ctx)}>
@@ -674,50 +701,53 @@ export function OceanLayout({ ctx }: LayoutProps) {
               </div>
             </div>
 
-            <div className="my-2 rounded-lg border p-2" style={surfaceStyle(ctx)}>
-              <p className="text-[0.65em] font-bold uppercase" style={accentText(ctx)}>
-                {ctx.counterpartyLabel}
-              </p>
-              <p className="font-bold" style={{ color: ctx.theme.primaryDark }}>
-                {ctx.counterpartyName || "—"}
-              </p>
-              <CounterpartyRepLine ctx={ctx} />
-              {ctx.addrLine ? <p className="text-[0.75em] text-neutral-500">{ctx.addrLine}</p> : null}
-            </div>
+            <LayoutMetaBar ctx={ctx} className="my-2" />
+
+            <LayoutCounterparty
+              ctx={ctx}
+              className="my-2 rounded-lg border p-2"
+              style={surfaceStyle(ctx)}
+              labelClassName="text-[0.65em] font-bold uppercase"
+            />
           </div>
         </div>
 
-        <div className={cn("mx-[5%]", linesTableClass)}>
-          <LinesSpreadsheet ctx={ctx} headStyle={tableHeadStyle(ctx)} />
-        </div>
+        <LayoutLines
+          ctx={ctx}
+          className={cn("mx-[5%]", linesTableClass)}
+          preview={<LinesSpreadsheet ctx={ctx} headStyle={tableHeadStyle(ctx)} />}
+        />
 
         {!ctx.deliveryNote ? (
-          <div className="mx-[5%] mb-2 ml-auto w-[55%] overflow-hidden rounded text-[0.8em]">
-            <div className="flex justify-between border-b border-neutral-200 py-1">
-              <span>Sous-total HT</span>
-              <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+          <>
+            <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
+            <div className="mx-[5%] mb-2 ml-auto w-[55%] overflow-hidden rounded text-[0.8em]">
+              <div className="flex justify-between border-b border-neutral-200 py-1">
+                <span>Sous-total HT</span>
+                <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+              </div>
+              <div className="flex justify-between border-b border-neutral-200 py-1">
+                <span>TVA {ctx.vatRate}%</span>
+                <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
+              </div>
+              <div
+                className="flex justify-between px-2 py-1.5 font-bold text-white"
+                style={{ ...primaryBg(ctx), borderRadius: "0 0 4px 4px" }}
+              >
+                <span>Total TTC</span>
+                <span className="tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
+              </div>
             </div>
-            <div className="flex justify-between border-b border-neutral-200 py-1">
-              <span>TVA {ctx.vatRate}%</span>
-              <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
-            </div>
-            <div
-              className="flex justify-between px-2 py-1.5 font-bold text-white"
-              style={{ ...primaryBg(ctx), borderRadius: "0 0 4px 4px" }}
-            >
-              <span>Total TTC</span>
-              <span className="tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
-            </div>
-          </div>
+          </>
         ) : null}
 
-        <NotesBlock ctx={ctx} className="mx-[5%] mb-2 rounded border border-slate-100 bg-slate-50 p-2" />
-
+        <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 rounded border border-slate-100 bg-slate-50 p-2" />
+        <LayoutSettingsBanner ctx={ctx} />
         <footer className="mt-auto shrink-0 px-[5%] py-2 text-center text-[0.7em]" style={accentMutedText(ctx)}>
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
@@ -725,7 +755,7 @@ export function OceanLayout({ ctx }: LayoutProps) {
 export function SlateLayout({ ctx }: LayoutProps) {
   const products = renderProductLines(ctx);
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <div className="flex h-full flex-col px-[6%] py-4">
         <div className="flex justify-between text-[0.8em]">
           <div className="flex items-center gap-2">
@@ -741,50 +771,62 @@ export function SlateLayout({ ctx }: LayoutProps) {
           </p>
         </div>
 
+        <LayoutMetaBar ctx={ctx} className="my-2" />
+
         <div className="my-4 border-l-4 pl-3" style={{ borderColor: ctx.theme.primary }}>
-          <p className="text-[0.7em] font-bold uppercase tracking-wider text-slate-500">Facturé à</p>
-          <p className="text-[1em] font-bold text-slate-900">{ctx.counterpartyName || "—"}</p>
-          <CounterpartyRepLine ctx={ctx} />
-          {ctx.addrLine ? <p className="text-[0.85em] text-slate-600">{ctx.addrLine}</p> : null}
+          <LayoutCounterparty
+            ctx={ctx}
+            labelClassName="text-[0.7em] font-bold uppercase tracking-wider text-slate-500"
+          />
         </div>
 
         <p className="mb-2 text-[0.85em]">
           Objet : <strong>{ctx.label}</strong>
         </p>
 
-        <ol className="mb-3 max-h-[40%] shrink-0 list-decimal space-y-2 overflow-y-auto pl-4 text-[0.85em]">
-          {products.length === 0 ? (
-            <li className="list-none italic text-slate-400">Aucune prestation listée.</li>
-          ) : (
-            products.map((line, i) => (
-              <li key={i} className="pl-1">
-                <span className="font-medium">{line.designation}</span>
-                <span className="text-slate-500">
-                  {" "}
-                  — {line.qty} {line.unit}
-                  {!ctx.deliveryNote ? ` — ${ctx.money(ctx.lineTtc(line))} TTC` : ""}
-                </span>
-              </li>
-            ))
-          )}
-        </ol>
+        <LayoutLines
+          ctx={ctx}
+          className="mb-3 max-h-[40%] shrink-0 list-decimal space-y-2 overflow-y-auto pl-4 text-[0.85em]"
+          preview={
+            <ol className="list-decimal space-y-2 pl-4">
+              {products.length === 0 ? (
+                <li className="list-none italic text-slate-400">Aucune prestation listée.</li>
+              ) : (
+                products.map((line, i) => (
+                  <li key={i} className="pl-1">
+                    <span className="font-medium">{line.designation}</span>
+                    <span className="text-slate-500">
+                      {" "}
+                      — {line.qty} {line.unit}
+                      {!ctx.deliveryNote ? ` — ${ctx.money(ctx.lineTtc(line))} TTC` : ""}
+                    </span>
+                  </li>
+                ))
+              )}
+            </ol>
+          }
+        />
 
         {!ctx.deliveryNote ? (
-          <p className="mb-3 text-[0.9em]">
-            Montant total dû :{" "}
-            <strong className="text-[1.1em] tabular-nums" style={{ color: ctx.theme.primaryDark }}>
-              {ctx.money(ctx.netToPay)} MAD
-            </strong>{" "}
-            TTC.
-          </p>
+          <>
+            <LayoutAdjustments ctx={ctx} className="mb-2" />
+            <p className="mb-3 text-[0.9em]">
+              Montant total dû :{" "}
+              <strong className="text-[1.1em] tabular-nums" style={{ color: ctx.theme.primaryDark }}>
+                {ctx.money(ctx.netToPay)} MAD
+              </strong>{" "}
+              TTC.
+            </p>
+          </>
         ) : null}
 
-        <NotesBlock ctx={ctx} className="mb-2 text-[0.85em] italic text-slate-600" />
+        <LayoutNotes ctx={ctx} className="mb-2 text-[0.85em] italic text-slate-600" />
+        <LayoutSettingsBanner ctx={ctx} />
         <footer className="mt-auto border-t border-slate-200 pt-2 text-center text-[0.75em] text-slate-400">
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
@@ -792,7 +834,7 @@ export function SlateLayout({ ctx }: LayoutProps) {
 export function RoyalLayout({ ctx }: LayoutProps) {
   const products = renderProductLines(ctx);
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <div
         className="relative flex h-full flex-col border m-2 p-3"
         style={{ borderColor: ctx.theme.surfaceBorder }}
@@ -836,85 +878,90 @@ export function RoyalLayout({ ctx }: LayoutProps) {
           </p>
         </div>
 
-        <div
+        <LayoutMetaBar ctx={ctx} className="mb-2" />
+
+        <LayoutCounterparty
+          ctx={ctx}
           className="mx-auto mb-3 max-w-[90%] rounded-lg border-2 px-4 py-2 text-center"
           style={clientBoxStyle(ctx)}
-        >
-          <p className="text-[0.65em] font-bold uppercase" style={accentText(ctx)}>
-            {ctx.counterpartyLabel}
-          </p>
-          <p className="font-bold" style={{ color: ctx.theme.primaryDark }}>
-            {ctx.counterpartyName || "—"}
-          </p>
-          <CounterpartyRepLine ctx={ctx} />
-        </div>
+          labelClassName="text-[0.65em] font-bold uppercase"
+        />
 
         <div className="mb-2 shrink-0 overflow-hidden rounded-lg border" style={{ borderColor: ctx.theme.surfaceBorder }}>
-          <table className="w-full text-[0.78em]">
-            <thead>
-              <tr style={tableHeadStyle(ctx)}>
-                <th className="p-1.5 text-left">Article</th>
-                <th className="p-1.5 text-right">Qté</th>
-                {!ctx.deliveryNote ? <th className="p-1.5 text-right">Total</th> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {products.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="p-4 text-center italic" style={accentText(ctx)}>
-                    Aucune ligne
-                  </td>
+          <LayoutLines
+            ctx={ctx}
+            preview={
+            <table className="w-full text-[0.78em]">
+              <thead>
+                <tr style={tableHeadStyle(ctx)}>
+                  <th className="p-1.5 text-left">Article</th>
+                  <th className="p-1.5 text-right">Qté</th>
+                  {!ctx.deliveryNote ? <th className="p-1.5 text-right">Total</th> : null}
                 </tr>
-              ) : (
-                products.map((line, i) => (
-                  <tr key={i} style={i % 2 === 1 ? { backgroundColor: ctx.theme.surface } : undefined}>
-                    <td className="border-t p-1.5" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                      <p className="font-medium">{line.designation}</p>
-                      <p className="text-[0.85em]" style={accentText(ctx)}>
-                        {line.reference}
-                      </p>
+              </thead>
+              <tbody>
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="p-4 text-center italic" style={accentText(ctx)}>
+                      Aucune ligne
                     </td>
-                    <td className="border-t p-1.5 text-right tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                      {line.qty}
-                    </td>
-                    {!ctx.deliveryNote ? (
-                      <td className="border-t p-1.5 text-right font-semibold tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                        {ctx.money(ctx.lineTtc(line))}
-                      </td>
-                    ) : null}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  products.map((line, i) => (
+                    <tr key={i} style={i % 2 === 1 ? { backgroundColor: ctx.theme.surface } : undefined}>
+                      <td className="border-t p-1.5" style={{ borderColor: ctx.theme.surfaceBorder }}>
+                        <p className="font-medium">{line.designation}</p>
+                        <p className="text-[0.85em]" style={accentText(ctx)}>
+                          {line.reference}
+                        </p>
+                      </td>
+                      <td className="border-t p-1.5 text-right tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
+                        {line.qty}
+                      </td>
+                      {!ctx.deliveryNote ? (
+                        <td className="border-t p-1.5 text-right font-semibold tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
+                          {ctx.money(ctx.lineTtc(line))}
+                        </td>
+                      ) : null}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          }
+          />
         </div>
 
         {!ctx.deliveryNote ? (
-          <div
-            className="mx-auto mb-2 w-[85%] border-2 border-double p-3 text-center"
-            style={{ borderColor: ctx.theme.primary }}
-          >
-            <p className="text-[0.7em] uppercase tracking-widest" style={accentText(ctx)}>
-              Net à payer
-            </p>
-            <p className="text-[1.35em] font-bold tabular-nums" style={{ color: ctx.theme.primaryDark }}>
-              {ctx.money(ctx.netToPay)} MAD
-            </p>
-          </div>
+          <>
+            <LayoutAdjustments ctx={ctx} className="mb-2" />
+            <div
+              className="mx-auto mb-2 w-[85%] border-2 border-double p-3 text-center"
+              style={{ borderColor: ctx.theme.primary }}
+            >
+              <p className="text-[0.7em] uppercase tracking-widest" style={accentText(ctx)}>
+                Net à payer
+              </p>
+              <p className="text-[1.35em] font-bold tabular-nums" style={{ color: ctx.theme.primaryDark }}>
+                {ctx.money(ctx.netToPay)} MAD
+              </p>
+            </div>
+          </>
         ) : null}
 
+        <LayoutSettingsBanner ctx={ctx} />
         <footer className="mt-auto border-t pt-2 text-center text-[0.75em]" style={{ borderColor: ctx.theme.surfaceBorder, ...accentText(ctx) }}>
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
 /** 11 — Triangles décoratifs, meta boxes, tableau sombre */
 export function GeometricLayout({ ctx }: LayoutProps) {
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <header className="relative shrink-0 overflow-hidden bg-neutral-100 px-[5%] py-3">
         <div
           className="pointer-events-none absolute -right-2 top-0 h-14 w-20 bg-neutral-300/70"
@@ -944,12 +991,11 @@ export function GeometricLayout({ ctx }: LayoutProps) {
       </header>
 
       <div className="mx-[5%] mt-2 grid grid-cols-2 gap-2">
-        <div className="rounded border border-neutral-200 bg-white p-2">
-          <p className="text-[0.65em] font-bold uppercase text-neutral-500">{ctx.counterpartyLabel}</p>
-          <p className="font-bold">{ctx.counterpartyName || "—"}</p>
-          <CounterpartyRepLine ctx={ctx} />
-          {ctx.addrLine ? <p className="text-[0.75em] text-neutral-500">{ctx.addrLine}</p> : null}
-        </div>
+        <LayoutCounterparty
+          ctx={ctx}
+          className="rounded border border-neutral-200 bg-white p-2"
+          labelClassName="text-[0.65em] font-bold uppercase text-neutral-500"
+        />
         <div className="grid grid-cols-3 gap-1 text-center text-[0.65em]">
           {!ctx.deliveryNote ? (
             <div className="rounded bg-neutral-900 p-1.5 text-white">
@@ -975,31 +1021,41 @@ export function GeometricLayout({ ctx }: LayoutProps) {
         </div>
       </div>
 
-      <div className="mx-[5%] my-2 shrink-0 overflow-hidden">
-        <LinesSpreadsheet ctx={ctx} headStyle={{ backgroundColor: "#2563eb", color: "#fff" }} />
-      </div>
+      <LayoutMetaBar ctx={ctx} className="mx-[5%]" />
+
+      <LayoutLines
+        ctx={ctx}
+        className="mx-[5%] my-2 shrink-0 overflow-hidden"
+        preview={
+          <LinesSpreadsheet ctx={ctx} headStyle={{ backgroundColor: "#2563eb", color: "#fff" }} />
+        }
+      />
 
       {!ctx.deliveryNote ? (
-        <div className="mx-[5%] mb-2 flex justify-end">
-          <div className="rounded bg-neutral-900 px-4 py-2 text-right text-white">
-            <p className="text-[0.65em] uppercase opacity-70">Net à payer</p>
-            <p className="text-[1.15em] font-bold tabular-nums">{ctx.money(ctx.netToPay)} MAD</p>
+        <>
+          <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
+          <div className="mx-[5%] mb-2 flex justify-end">
+            <div className="rounded bg-neutral-900 px-4 py-2 text-right text-white">
+              <p className="text-[0.65em] uppercase opacity-70">Net à payer</p>
+              <p className="text-[1.15em] font-bold tabular-nums">{ctx.money(ctx.netToPay)} MAD</p>
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
 
-      <NotesBlock ctx={ctx} className="mx-[5%] mb-2 text-[0.85em] text-neutral-600" />
+      <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 text-[0.85em] text-neutral-600" />
+      <LayoutSettingsBanner ctx={ctx} />
       <footer className="mt-auto border-t border-neutral-200 px-[5%] py-2 text-center text-neutral-400">
         <FooterLegal ctx={ctx} />
       </footer>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
 /** 12 — Barre verticale + titre filigrane */
 export function StripeLayout({ ctx }: LayoutProps) {
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <div className="flex shrink-0">
         <div className="w-[4%] shrink-0" style={bandStyleVertical(ctx)} />
         <div className="flex min-w-0 flex-1 flex-col">
@@ -1016,15 +1072,13 @@ export function StripeLayout({ ctx }: LayoutProps) {
             </p>
           </header>
 
+          <LayoutMetaBar ctx={ctx} className="px-[5%]" />
+
           <div className="grid grid-cols-2 gap-3 px-[5%] pb-2">
-            <div>
-              <p className="text-[0.65em] font-bold uppercase tracking-wider text-neutral-400">
-                {ctx.counterpartyLabel}
-              </p>
-              <p className="font-bold">{ctx.counterpartyName || "—"}</p>
-              <CounterpartyRepLine ctx={ctx} />
-              {ctx.addrLine ? <p className="text-[0.8em] text-neutral-500">{ctx.addrLine}</p> : null}
-            </div>
+            <LayoutCounterparty
+              ctx={ctx}
+              labelClassName="text-[0.65em] font-bold uppercase tracking-wider text-neutral-400"
+            />
             <div className="text-right">
               <p className="text-[0.65em] font-bold uppercase tracking-wider text-neutral-400">
                 Émetteur
@@ -1036,43 +1090,49 @@ export function StripeLayout({ ctx }: LayoutProps) {
             </div>
           </div>
 
-          <div className="mx-[5%] mb-2 shrink-0 overflow-hidden">
-            <LinesSpreadsheet ctx={ctx} headStyle={tableHeadStyle(ctx)} />
-          </div>
+          <LayoutLines
+            ctx={ctx}
+            className="mx-[5%] mb-2 shrink-0 overflow-hidden"
+            preview={<LinesSpreadsheet ctx={ctx} headStyle={tableHeadStyle(ctx)} />}
+          />
 
           {!ctx.deliveryNote ? (
-            <div className="mx-[5%] mb-2 ml-auto w-[55%] overflow-hidden rounded text-[0.8em]">
-              <div className="flex justify-between border-b border-neutral-200 py-1">
-                <span>Sous-total HT</span>
-                <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+            <>
+              <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
+              <div className="mx-[5%] mb-2 ml-auto w-[55%] overflow-hidden rounded text-[0.8em]">
+                <div className="flex justify-between border-b border-neutral-200 py-1">
+                  <span>Sous-total HT</span>
+                  <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+                </div>
+                <div className="flex justify-between border-b border-neutral-200 py-1">
+                  <span>TVA {ctx.vatRate}%</span>
+                  <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
+                </div>
+                <div
+                  className="flex justify-between px-2 py-1.5 font-bold"
+                  style={{ ...primaryBg(ctx), borderRadius: "0 0 4px 4px" }}
+                >
+                  <span>Total TTC</span>
+                  <span className="tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
+                </div>
               </div>
-              <div className="flex justify-between border-b border-neutral-200 py-1">
-                <span>TVA {ctx.vatRate}%</span>
-                <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
-              </div>
-              <div
-                className="flex justify-between px-2 py-1.5 font-bold"
-                style={{ ...primaryBg(ctx), borderRadius: "0 0 4px 4px" }}
-              >
-                <span>Total TTC</span>
-                <span className="tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
-              </div>
-            </div>
+            </>
           ) : null}
 
+          <LayoutSettingsBanner ctx={ctx} />
           <footer className="mt-auto px-[5%] py-2 text-center text-[0.75em] text-neutral-400">
             <FooterLegal ctx={ctx} />
           </footer>
         </div>
       </div>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
 /** 13 — Bandeaux dégradés haut / bas */
 export function GradientLayout({ ctx }: LayoutProps) {
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <header className="shrink-0 px-[5%] py-4" style={bandStyle(ctx)}>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -1086,38 +1146,44 @@ export function GradientLayout({ ctx }: LayoutProps) {
         </div>
       </header>
 
+      <LayoutMetaBar ctx={ctx} className="mx-[5%]" />
+
       <section className="mx-[5%] -mt-2 rounded-lg border bg-white p-3 shadow-sm ring-1 ring-black/5">
-        <p className="text-[0.65em] font-bold uppercase" style={accentText(ctx)}>
-          {ctx.counterpartyLabel}
-        </p>
-        <p className="font-bold">{ctx.counterpartyName || "—"}</p>
-        <CounterpartyRepLine ctx={ctx} />
-        {ctx.counterpartyIce ? <p className="text-[0.8em] text-neutral-500">ICE {ctx.counterpartyIce}</p> : null}
+        <LayoutCounterparty
+          ctx={ctx}
+          labelClassName="text-[0.65em] font-bold uppercase"
+        />
       </section>
 
-      <div className="mx-[5%] my-2 shrink-0 overflow-hidden rounded border">
-        <LinesSpreadsheet ctx={ctx} headStyle={tableHeadStyle(ctx)} />
-      </div>
+      <LayoutLines
+        ctx={ctx}
+        className="mx-[5%] my-2 shrink-0 overflow-hidden rounded border"
+        preview={<LinesSpreadsheet ctx={ctx} headStyle={tableHeadStyle(ctx)} />}
+      />
 
       {!ctx.deliveryNote ? (
-        <div className="mx-[5%] mb-2">
-          <TotalsBanner ctx={ctx} style={gradientBannerStyle(ctx)} dark />
-        </div>
+        <>
+          <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
+          <div className="mx-[5%] mb-2">
+            <TotalsBanner ctx={ctx} style={gradientBannerStyle(ctx)} dark />
+          </div>
+        </>
       ) : null}
 
+      <LayoutSettingsBanner ctx={ctx} />
       <footer className="mt-auto px-[5%] py-3" style={bandStyle(ctx)}>
         <div className="text-center text-[0.7em] opacity-90">
           <FooterLegal ctx={ctx} />
         </div>
       </footer>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
 /** 14 — Titre centré, tableau vert */
 export function InterimLayout({ ctx }: LayoutProps) {
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <header className="shrink-0 px-[5%] pt-4 text-center">
         <h1 className="text-[1.25em] font-bold text-neutral-800">{ctx.label}</h1>
         <div className="mt-3 flex justify-between text-left text-[0.75em]">
@@ -1130,64 +1196,61 @@ export function InterimLayout({ ctx }: LayoutProps) {
       </header>
 
       <div className="mx-[5%] mt-2 grid grid-cols-2 gap-3 text-[0.8em]">
-        <div>
-          <p className="font-bold text-neutral-600">Facturé à :</p>
-          <p className="font-semibold">{ctx.counterpartyName || "—"}</p>
-          <CounterpartyRepLine ctx={ctx} />
-          {ctx.addrLine ? <p className="text-neutral-500">{ctx.addrLine}</p> : null}
-        </div>
+        <LayoutCounterparty
+          ctx={ctx}
+          labelClassName="font-bold text-neutral-600"
+        />
         <div className="text-right">
           <p>
             <span className="text-neutral-500">N° </span>
             {ctx.number}
           </p>
-          <p>
-            <span className="text-neutral-500">Date </span>
-            {ctx.dateFormatted}
-          </p>
-          {ctx.reference ? (
-            <p>
-              <span className="text-neutral-500">Réf. </span>
-              {ctx.reference}
-            </p>
-          ) : null}
+          <LayoutMetaBar ctx={ctx} variant="inline" />
         </div>
       </div>
 
-      <div className="mx-[5%] my-2 shrink-0 overflow-hidden">
-        <LinesSpreadsheet ctx={ctx} headStyle={{ backgroundColor: ctx.theme.primaryDark, color: "#fff" }} />
-      </div>
+      <LayoutLines
+        ctx={ctx}
+        className="mx-[5%] my-2 shrink-0 overflow-hidden"
+        preview={
+          <LinesSpreadsheet ctx={ctx} headStyle={{ backgroundColor: ctx.theme.primaryDark, color: "#fff" }} />
+        }
+      />
 
       {!ctx.deliveryNote ? (
-        <div className="mx-[5%] mb-2 space-y-0.5 text-right text-[0.8em]">
-          <div className="flex justify-end gap-6">
-            <span className="text-neutral-500">Sous-total</span>
-            <span className="w-16 tabular-nums">{ctx.money(ctx.totalHt)}</span>
-          </div>
-          <div className="flex justify-end gap-6">
-            <span className="text-neutral-500">TVA</span>
-            <span className="w-16 tabular-nums">{ctx.money(ctx.vatAmount)}</span>
-          </div>
-          <div className="mt-1 rounded px-3 py-2 font-bold text-white" style={primaryDarkBg(ctx)}>
+        <>
+          <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
+          <div className="mx-[5%] mb-2 space-y-0.5 text-right text-[0.8em]">
             <div className="flex justify-end gap-6">
-              <span>TOTAL</span>
-              <span className="w-16 tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
+              <span className="text-neutral-500">Sous-total</span>
+              <span className="w-16 tabular-nums">{ctx.money(ctx.totalHt)}</span>
+            </div>
+            <div className="flex justify-end gap-6">
+              <span className="text-neutral-500">TVA</span>
+              <span className="w-16 tabular-nums">{ctx.money(ctx.vatAmount)}</span>
+            </div>
+            <div className="mt-1 rounded px-3 py-2 font-bold text-white" style={primaryDarkBg(ctx)}>
+              <div className="flex justify-end gap-6">
+                <span>TOTAL</span>
+                <span className="w-16 tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       ) : null}
 
+      <LayoutSettingsBanner ctx={ctx} />
       <footer className="mt-auto border-t px-[5%] py-2 text-center text-[0.75em] text-neutral-400">
         <FooterLegal ctx={ctx} />
       </footer>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
 /** 15 — Corporate bleu, blocs Facturé à / Livré à */
 export function BlueproLayout({ ctx }: LayoutProps) {
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <header className="shrink-0 px-[5%] pt-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -1211,16 +1274,14 @@ export function BlueproLayout({ ctx }: LayoutProps) {
         </div>
       </header>
 
+      <LayoutMetaBar ctx={ctx} className="mx-[5%]" />
+
       <div className="mx-[5%] mt-2 grid grid-cols-2 gap-0 overflow-hidden rounded border text-[0.75em]">
         <div>
           <div className="px-2 py-1 font-bold text-white" style={primaryDarkBg(ctx)}>
             Facturé à
           </div>
-          <div className="border-t border-neutral-200 p-2">
-            <p className="font-bold">{ctx.counterpartyName || "—"}</p>
-            <CounterpartyRepLine ctx={ctx} />
-            {ctx.addrLine ? <p className="text-neutral-500">{ctx.addrLine}</p> : null}
-          </div>
+          <LayoutCounterparty ctx={ctx} className="border-t border-neutral-200 p-2" showIce={false} />
         </div>
         <div className="border-l border-neutral-200">
           <div className="px-2 py-1 font-bold text-white" style={primaryDarkBg(ctx)}>
@@ -1233,47 +1294,55 @@ export function BlueproLayout({ ctx }: LayoutProps) {
         </div>
       </div>
 
-      <div className="mx-[5%] my-2 shrink-0 overflow-hidden">
-        <LinesSpreadsheet
-          ctx={ctx}
-          headStyle={primaryDarkBg(ctx)}
-          stripeStyle={{ backgroundColor: ctx.theme.surface }}
-        />
-      </div>
+      <LayoutLines
+        ctx={ctx}
+        className="mx-[5%] my-2 shrink-0 overflow-hidden"
+        preview={
+          <LinesSpreadsheet
+            ctx={ctx}
+            headStyle={primaryDarkBg(ctx)}
+            stripeStyle={{ backgroundColor: ctx.theme.surface }}
+          />
+        }
+      />
 
       {!ctx.deliveryNote ? (
-        <div className="mx-[5%] mb-2 grid grid-cols-2 gap-2 text-[0.75em]">
-          <NotesBlock ctx={ctx} className="rounded border border-neutral-200 p-2" />
-          <div className="space-y-1 text-right">
-            <div className="flex justify-between">
-              <span>Sous-total</span>
-              <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>TVA</span>
-              <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
-            </div>
-            <div className="flex justify-between border-t-2 pt-1 font-bold" style={accentBorder(ctx)}>
-              <span>Total</span>
-              <span className="tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
+        <>
+          <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
+          <div className="mx-[5%] mb-2 grid grid-cols-2 gap-2 text-[0.75em]">
+            <LayoutNotes ctx={ctx} className="rounded border border-neutral-200 p-2" />
+            <div className="space-y-1 text-right">
+              <div className="flex justify-between">
+                <span>Sous-total</span>
+                <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>TVA</span>
+                <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
+              </div>
+              <div className="flex justify-between border-t-2 pt-1 font-bold" style={accentBorder(ctx)}>
+                <span>Total</span>
+                <span className="tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       ) : (
-        <NotesBlock ctx={ctx} className="mx-[5%] mb-2 rounded border p-2 text-[0.8em]" />
+        <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 rounded border p-2 text-[0.8em]" />
       )}
 
+      <LayoutSettingsBanner ctx={ctx} />
       <footer className="mt-auto border-t px-[5%] py-2 text-center text-[0.75em] text-neutral-400">
         <FooterLegal ctx={ctx} />
       </footer>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 
 /** 16 — Bloc logo, filet accent, solde dû */
 export function StudioLayout({ ctx }: LayoutProps) {
   return (
-    <PaperFrame ctx={ctx}>
+    <EditableLayoutFrame ctx={ctx}>
       <header className="flex shrink-0 items-center gap-2 px-[5%] pt-3">
         <LogoMark ctx={ctx} className="max-h-8 max-w-[72px] rounded object-contain" />
         <p className="text-[1em] font-black uppercase">{ctx.sellerName}</p>
@@ -1284,44 +1353,51 @@ export function StudioLayout({ ctx }: LayoutProps) {
       </div>
 
       <div className="mx-[5%] mt-2 grid grid-cols-2 gap-3 text-[0.75em]">
-        <div>
-          <p className="font-bold uppercase text-neutral-500">Facturé à :</p>
-          <p className="font-bold">{ctx.counterpartyName || "—"}</p>
-          <CounterpartyRepLine ctx={ctx} />
-        </div>
+        <LayoutCounterparty
+          ctx={ctx}
+          labelClassName="font-bold uppercase text-neutral-500"
+        />
         <div className="text-right text-neutral-600">
           <p>N° {ctx.number}</p>
-          <p>Date : {ctx.dateFormatted}</p>
-          {ctx.dueDateFormatted ? <p>Échéance : {ctx.dueDateFormatted}</p> : null}
+          <LayoutMetaBar ctx={ctx} variant="inline" />
         </div>
       </div>
 
       <div className="mx-[5%] my-2 shrink-0 overflow-hidden border-t-2" style={accentBorder(ctx)}>
-        <LinesSpreadsheet ctx={ctx} headStyle={{ backgroundColor: "transparent", color: ctx.theme.primaryDark }} />
+        <LayoutLines
+          ctx={ctx}
+          preview={
+            <LinesSpreadsheet ctx={ctx} headStyle={{ backgroundColor: "transparent", color: ctx.theme.primaryDark }} />
+          }
+        />
       </div>
 
       {!ctx.deliveryNote ? (
-        <div className="mx-[5%] mb-2 space-y-1 text-right text-[0.75em]">
-          <div className="flex justify-end gap-4">
-            <span>Sous-total</span>
-            <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+        <>
+          <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
+          <div className="mx-[5%] mb-2 space-y-1 text-right text-[0.75em]">
+            <div className="flex justify-end gap-4">
+              <span>Sous-total</span>
+              <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+            </div>
+            <div className="flex justify-end gap-4">
+              <span>TVA</span>
+              <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
+            </div>
+            <div className="inline-flex min-w-[140px] justify-between rounded px-3 py-1.5 font-bold text-white" style={primaryBg(ctx)}>
+              <span>Solde dû</span>
+              <span className="tabular-nums">{ctx.money(ctx.netToPay)}</span>
+            </div>
           </div>
-          <div className="flex justify-end gap-4">
-            <span>TVA</span>
-            <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
-          </div>
-          <div className="inline-flex min-w-[140px] justify-between rounded px-3 py-1.5 font-bold text-white" style={primaryBg(ctx)}>
-            <span>Solde dû</span>
-            <span className="tabular-nums">{ctx.money(ctx.netToPay)}</span>
-          </div>
-        </div>
+        </>
       ) : null}
 
-      <NotesBlock ctx={ctx} className="mx-[5%] mb-2 text-[0.8em]" />
+      <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 text-[0.8em]" />
+      <LayoutSettingsBanner ctx={ctx} />
       <footer className="mt-auto border-t-2 px-[5%] py-2 text-center" style={accentBorder(ctx)}>
         <FooterLegal ctx={ctx} />
       </footer>
-    </PaperFrame>
+    </EditableLayoutFrame>
   );
 }
 

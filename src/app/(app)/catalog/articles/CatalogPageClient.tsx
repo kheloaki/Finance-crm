@@ -31,10 +31,6 @@ export default function CatalogPageClient({ kind }: { kind: "article" | "service
   const remove = useMutation(api.catalog.remove);
 
   const title = kind === "article" ? "Articles" : "Services";
-  const description =
-    kind === "article"
-      ? "Catalogue articles pour vos lignes de documents."
-      : "Catalogue services pour vos prestations.";
 
 type CatalogDisplayRow = Omit<CatalogItemRow, "unitPriceHt"> & {
   name: string;
@@ -44,7 +40,6 @@ type CatalogDisplayRow = Omit<CatalogItemRow, "unitPriceHt"> & {
   return (
     <EntityCrudPanel<CatalogDisplayRow>
       title={title}
-      description={description}
       items={items?.map((item) => ({
         ...item,
         name: item.designation,

@@ -248,14 +248,6 @@ function SearchSkeleton() {
   );
 }
 
-function KbdHint({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded border border-slate-200 bg-white px-1 font-sans text-[10px] font-medium text-ink-secondary">
-      {children}
-    </kbd>
-  );
-}
-
 function ActionIcon({
   title,
   onClick,
@@ -685,18 +677,12 @@ export function GlobalSearchHost() {
               {showEmpty ? (
                 <div className="px-6 py-12 text-center">
                   <p className="text-sm font-medium text-ink">Aucun résultat</p>
-                  <p className="mt-1 text-xs text-ink-muted">
-                    Essayez un autre mot-clé ou retirez un filtre.
-                  </p>
                 </div>
               ) : null}
 
               {!isLoading && !showEmpty && flatResults.length === 0 ? (
                 <div className="px-6 py-12 text-center">
-                  <p className="text-sm font-medium text-ink">Commencez à taper</p>
-                  <p className="mt-1 text-xs text-ink-muted">
-                    Numéro de document, client, référence article…
-                  </p>
+                  <p className="text-sm text-ink-muted">Rechercher…</p>
                 </div>
               ) : null}
 
@@ -753,11 +739,7 @@ export function GlobalSearchHost() {
             </div>
 
             {/* Footer */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-2.5 sm:px-5">
-              <p className="text-[11px] leading-relaxed text-ink-muted">
-                Utilisez <KbdHint>↑</KbdHint> <KbdHint>↓</KbdHint> pour naviguer,{" "}
-                <KbdHint>↵</KbdHint> pour ouvrir.
-              </p>
+            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 px-4 py-2.5 sm:px-5">
               <div className="flex items-center gap-3">
                 {isLoading ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-ink-muted" />

@@ -21,7 +21,7 @@ export type EntityField = {
 
 type EntityCrudPanelProps<T extends { _id: string }> = {
   title: string;
-  description: string;
+  description?: string;
   items: T[] | undefined;
   fields: EntityField[];
   emptyLabel: string;
@@ -99,10 +99,10 @@ export function EntityCrudPanel<T extends { _id: string }>({
   const tableFields = fields.filter((f) => f.key !== "name" && f.key !== "designation");
 
   return (
-    <div className="pb-6">
+    <div className="pb-4">
       <PageHeader
         title={title}
-        description={description}
+        {...(description ? { description } : {})}
         actions={
           <Button
             onClick={() => {
@@ -117,9 +117,9 @@ export function EntityCrudPanel<T extends { _id: string }>({
       />
 
       {showForm ? (
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
               {fields.map((field) =>
                 field.type === "htTtc" ? (
                   <div key={field.key} className="space-y-2 sm:col-span-2">
@@ -130,7 +130,6 @@ export function EntityCrudPanel<T extends { _id: string }>({
                       onChangeHt={(v) =>
                         setValues((prev) => ({ ...prev, [field.key]: String(v) }))
                       }
-                      hint={`TVA ${vatRate}% — saisissez HT ou TTC`}
                     />
                   </div>
                 ) : (
@@ -160,12 +159,12 @@ export function EntityCrudPanel<T extends { _id: string }>({
       ) : null}
 
       <Card>
-        <CardContent className="px-5 py-5 sm:px-6 sm:py-6">
+        <CardContent className="px-4 py-4">
           <Input
             placeholder="Rechercher…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="mb-4 max-w-sm"
+            className="mb-3 max-w-sm"
           />
           {items === undefined ? (
             <DataTableSkeleton headers={["Nom", ...tableFields.slice(0, 3).map((f) => f.label), "Actions"]} rows={7} />

@@ -15,13 +15,18 @@ function isDocumentWorkspacePath(pathname: string) {
   return /^\/documents\/[^/]+(\/[^/]+)?$/.test(pathname);
 }
 
+function isDocumentEditorPath(pathname: string) {
+  return /^\/documents\/[^/]+\/[^/]+$/.test(pathname);
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const documentWorkspace = isDocumentWorkspacePath(pathname);
+  const documentEditor = isDocumentEditorPath(pathname);
 
   return (
     <ShellProvider>
-      <div className="app-backdrop app-shell-root flex min-h-[100svh] flex-col gap-1 p-1">
+      <div className="app-backdrop app-shell-root flex min-h-[100svh] flex-col gap-0.5 p-0.5">
         <TopBar />
         <div className="flex min-h-0 min-w-0 flex-1">
           <Sidebar />
@@ -30,9 +35,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className={cn("h-full", documentWorkspace ? "overflow-hidden" : "overflow-y-auto")}>
               <div
                 className={cn(
-                  documentWorkspace
-                    ? "flex h-full min-h-0 flex-col p-1 sm:p-1.5"
-                    : "px-4 py-4 sm:px-6 sm:py-5 lg:px-8",
+                  documentEditor
+                    ? "flex h-full min-h-0 flex-col p-0"
+                    : documentWorkspace
+                      ? "flex h-full min-h-0 flex-col p-0.5 sm:p-1"
+                      : "px-3 py-3 sm:px-4 sm:py-3 lg:px-5",
                 )}
               >
                 <OrgScopedContent>{children}</OrgScopedContent>
@@ -62,7 +69,7 @@ export function PageHeader({
     <div
       className={cn(
         "flex flex-col sm:flex-row sm:items-start sm:justify-between",
-        compact ? "mb-0 gap-2" : "mb-4 gap-3 sm:mb-5 sm:gap-4",
+        compact ? "mb-0 gap-1.5" : "mb-3 gap-2 sm:mb-4 sm:gap-3",
       )}
     >
       <div className="min-w-0">

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AppLogo } from "@/components/layout/AppLogo";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
 
 export default function SignInPage() {
@@ -53,9 +53,6 @@ export default function SignInPage() {
         <CardHeader className="items-center text-center">
           <AppLogo size="lg" className="mb-1 justify-center" />
           <CardTitle className="text-lg">{mode === "signIn" ? "Connexion" : "Créer un compte"}</CardTitle>
-          <CardDescription>
-            Accédez à votre espace Finance CRM — devis, factures et documents commerciaux.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

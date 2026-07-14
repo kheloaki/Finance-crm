@@ -27,11 +27,14 @@ type Props = {
   settings?: CompanySettings | null;
   templateId?: DocumentTemplateId;
   showCachet?: boolean;
+  /** Sample company data for empty fields — settings / design previews only. */
+  previewMode?: boolean;
   scale?: "fit" | "full";
   compact?: boolean;
+  hideFooterLabel?: boolean;
 };
 
-export function DocumentPreview({ compact, scale = "fit", ...props }: Props) {
+export function DocumentPreview({ compact, scale = "fit", hideFooterLabel, ...props }: Props) {
   const templateId = resolveTemplateId(props.templateId, props.settings);
   const meta = getTemplateMeta(templateId);
   const ctx = buildPreviewContext({
@@ -39,6 +42,7 @@ export function DocumentPreview({ compact, scale = "fit", ...props }: Props) {
     templateId,
     isSupplier: props.isSupplier,
     showCachet: props.showCachet,
+    previewMode: props.previewMode,
   });
 
   const Layout = LAYOUT_REGISTRY[templateId];
@@ -53,7 +57,7 @@ export function DocumentPreview({ compact, scale = "fit", ...props }: Props) {
       )}
     >
       <Layout ctx={ctx} />
-      {!compact ? (
+      {!compact && !hideFooterLabel ? (
         <p className="mt-2 text-center text-[10px] text-[#9CA3AF]">
           {meta.label} — aperçu du modèle sélectionné
         </p>

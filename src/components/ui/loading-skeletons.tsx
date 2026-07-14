@@ -113,7 +113,7 @@ function SkeletonDocumentPreview() {
             </div>
           </div>
         </div>
-        <div className="space-y-3 p-4">
+        <div className="space-y-3 p-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <SkeletonLine size="xs" className="w-12" />
@@ -193,7 +193,7 @@ export function DataTableSkeleton({
 
 export function EntityCrudSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <SkeletonPageHeader actions={1} />
       <div className={panelClass}>
         <SkeletonInput className="mb-4 max-w-sm" />
@@ -231,7 +231,7 @@ export function RecentDocumentsTableSkeleton() {
 
 export function SettingsFormSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <section className="space-y-4">
         <SkeletonLine size="md" className="max-w-[160px]" />
         <SkeletonLine size="sm" className="max-w-[320px]" />
@@ -332,7 +332,7 @@ export function ShellLoadingSkeleton() {
 
         {/* Main */}
         <div className="glass-main min-w-0 flex-1 overflow-hidden rounded-xl">
-          <div className="h-full overflow-y-auto p-4 sm:p-5">
+          <div className="h-full overflow-y-auto p-3 sm:p-4">
             <SkeletonPageHeader actions={3} />
             <div className="mt-6 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -350,7 +350,7 @@ export function ShellLoadingSkeleton() {
             <div className="mt-6">
               <DashboardStatsSkeleton />
             </div>
-            <div className={cn(cardClass, "mt-6 p-5")}>
+            <div className={cn(cardClass, "mt-4 p-4")}>
               <ChartSkeleton />
             </div>
           </div>
@@ -374,7 +374,7 @@ export function ShellLoadingSkeleton() {
 
 export function PageContentSkeleton() {
   return (
-    <div className="space-y-6 p-1 sm:p-1.5">
+    <div className="space-y-4 p-0.5 sm:p-1">
       <EntityCrudSkeleton />
     </div>
   );

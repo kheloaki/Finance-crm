@@ -8,13 +8,36 @@ import type { PreviewContext } from "./types";
 
 /** Line items: natural height, scroll when many rows — no empty stretch. */
 export const linesBlockClass = "mb-2 max-h-[40%] shrink-0 overflow-y-auto";
-export const linesTableClass = "mb-2 shrink-0 overflow-hidden";
+export const linesTableClass = "mb-2 shrink-0";
 
-export function PaperFrame({ ctx, children }: { ctx: PreviewContext; children: ReactNode }) {
+export function PaperFrame({
+  ctx,
+  children,
+  variant = "preview",
+}: {
+  ctx: PreviewContext;
+  children: ReactNode;
+  variant?: "preview" | "editor";
+}) {
+  if (variant === "editor") {
+    return (
+      <article
+        className="relative flex w-full flex-col bg-white text-[#1e293b]"
+        style={{
+          fontSize: "clamp(9px, 1.8vw, 11px)",
+          ...themeCssVars(ctx.theme),
+        }}
+      >
+        {children}
+        <DocumentCachetZone ctx={ctx} />
+      </article>
+    );
+  }
+
   return (
     <div className="rounded-lg bg-[#e8eaed] p-3 shadow-inner">
       <article
-        className="relative mx-auto flex w-full flex-col overflow-hidden bg-white text-[#1e293b] shadow-[0_4px_24px_rgba(0,0,0,0.12)]"
+        className="relative mx-auto flex w-full min-h-0 flex-col overflow-y-auto bg-white text-[#1e293b] shadow-[0_4px_24px_rgba(0,0,0,0.12)]"
         style={{
           aspectRatio: "210 / 297",
           fontSize: "clamp(7.5px, 2vw, 10px)",
@@ -44,7 +67,9 @@ export function FooterLegal({ ctx }: { ctx: PreviewContext }) {
   return (
     <>
       {lines.length === 0 ? (
-        <p className="text-[0.75em] italic text-slate-300">Pied de page — Modèle société</p>
+        ctx.previewMode ? (
+          <p className="text-[0.75em] italic text-slate-300">Pied de page — Modèle société</p>
+        ) : null
       ) : (
         lines.map((l) => (
           <p key={l} className="text-[0.75em] leading-relaxed break-words uppercase">
@@ -153,9 +178,11 @@ export function LinesSpreadsheet({
           ) : (
             products.map((line, i) => (
               <tr key={i} style={i % 2 === 1 ? stripeStyle : undefined}>
-                <td className="border p-1.5">{line.designation}</td>
-                <td className="border p-1.5 text-center">{line.unit}</td>
-                <td className="border p-1.5 text-right tabular-nums">{line.qty}</td>
+                <td className="border p-1.5 align-top break-words whitespace-normal leading-snug">
+                  {line.designation}
+                </td>
+                <td className="border p-1.5 align-top text-center">{line.unit}</td>
+                <td className="border p-1.5 align-top text-right tabular-nums">{line.qty}</td>
               </tr>
             ))
           )}
@@ -183,18 +210,20 @@ export function LinesSpreadsheet({
             </td>
           </tr>
         ) : (
-          products.map((line, i) => (
-            <tr key={i} style={i % 2 === 1 ? stripeStyle : undefined}>
-              <td className="border p-1 text-slate-500">{line.reference || "—"}</td>
-              <td className="border p-1 font-medium">{line.designation}</td>
-              <td className="border p-1 text-center">{line.unit}</td>
-              <td className="border p-1 text-right tabular-nums">{line.qty}</td>
-              <td className="border p-1 text-right tabular-nums">{ctx.money(line.unitPriceHt)}</td>
-              <td className="border p-1 text-right font-semibold tabular-nums">
-                {ctx.money(ctx.lineTtc(line))}
-              </td>
-            </tr>
-          ))
+            products.map((line, i) => (
+              <tr key={i} style={i % 2 === 1 ? stripeStyle : undefined}>
+                <td className="border p-1.5 align-top text-slate-500">{line.reference || "—"}</td>
+                <td className="border p-1.5 align-top font-medium break-words whitespace-normal leading-snug">
+                  {line.designation}
+                </td>
+                <td className="border p-1.5 align-top text-center">{line.unit}</td>
+                <td className="border p-1.5 align-top text-right tabular-nums">{line.qty}</td>
+                <td className="border p-1.5 align-top text-right tabular-nums">{ctx.money(line.unitPriceHt)}</td>
+                <td className="border p-1.5 align-top text-right font-semibold tabular-nums">
+                  {ctx.money(ctx.lineTtc(line))}
+                </td>
+              </tr>
+            ))
         )}
       </tbody>
     </table>
@@ -208,11 +237,12 @@ export function LogoMark({ ctx, className = "", style }: { ctx: PreviewContext; 
       <img
         src={ctx.logoUrl}
         alt=""
-        className={cn("h-8 w-auto max-w-[72px] shrink-0 object-contain", className)}
+        className={cn("h-12 w-auto max-w-[110px] shrink-0 object-contain", className)}
         style={style}
       />
     );
   }
+  if (!ctx.sellerName?.trim()) return null;
   return (
     <div
       className={cn(
@@ -221,7 +251,7 @@ export function LogoMark({ ctx, className = "", style }: { ctx: PreviewContext; 
       )}
       style={{ backgroundColor: ctx.theme.primary, color: ctx.theme.onPrimary, ...style }}
     >
-      {ctx.sellerName.slice(0, 2).toUpperCase() || "AP"}
+      {ctx.sellerName.slice(0, 2).toUpperCase()}
     </div>
   );
 }

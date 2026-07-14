@@ -13,7 +13,7 @@ import {
   type DocumentType,
 } from "@/lib/documents";
 import type { DashboardStats } from "@/lib/convex-types";
-import { DashboardSectionHeader, dashboardCardClass } from "@/components/dashboard/dashboard-ui";
+import { DashboardSectionHeader, dashboardCardClass, dashboardSectionHeaderClass } from "@/components/dashboard/dashboard-ui";
 import { cn } from "@/lib/utils";
 
 const DOC_TYPES: {
@@ -35,10 +35,9 @@ type Props = {
 export function DocumentTypesPanel({ stats }: Props) {
   return (
     <div className={cn(dashboardCardClass, "flex h-full flex-col overflow-hidden")}>
-      <div className="border-b border-[#F3F4F6] px-5 py-4 sm:px-6">
+      <div className={dashboardSectionHeaderClass}>
         <DashboardSectionHeader
           title="Par type de document"
-          subtitle="Volume du mois en cours."
           actionHref="/documents/devis"
           actionLabel="Tout voir"
         />
@@ -48,10 +47,10 @@ export function DocumentTypesPanel({ stats }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#F3F4F6] bg-[#FAFBFC]/80 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[#9CA3AF]">
-              <th className="px-5 py-2.5 sm:px-6">Type</th>
-              <th className="px-5 py-2.5 sm:px-6">Volume</th>
-              <th className="px-5 py-2.5 sm:px-6">Statut</th>
-              <th className="w-10 px-3 py-2.5" />
+              <th className="px-4 py-2">Type</th>
+              <th className="px-4 py-2">Volume</th>
+              <th className="px-4 py-2">Statut</th>
+              <th className="w-10 px-2 py-2" />
             </tr>
           </thead>
           <tbody>
@@ -63,7 +62,7 @@ export function DocumentTypesPanel({ stats }: Props) {
                   key={type}
                   className="group border-b border-[#F3F4F6] last:border-0 transition-colors hover:bg-[#FAFBFC]/80"
                 >
-                  <td className="px-5 py-3.5 sm:px-6">
+                  <td className="px-4 py-2.5">
                     <Link
                       href={documentPath(type)}
                       className="flex items-center gap-3 font-medium text-ink hover:text-blue-600"
@@ -79,10 +78,10 @@ export function DocumentTypesPanel({ stats }: Props) {
                       <span className="text-[13px]">{DOCUMENT_LABELS[type]}</span>
                     </Link>
                   </td>
-                  <td className="px-5 py-3.5 tabular-nums text-[13px] text-[#374151] sm:px-6">
+                  <td className="px-4 py-2.5 tabular-nums text-[13px] text-[#374151]">
                     {count}
                   </td>
-                  <td className="px-5 py-3.5 sm:px-6">
+                  <td className="px-4 py-2.5">
                     <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6B7280]">
                       <span
                         className={cn(
@@ -93,7 +92,7 @@ export function DocumentTypesPanel({ stats }: Props) {
                       {active ? "Actif" : "Inactif"}
                     </span>
                   </td>
-                  <td className="px-3 py-3.5">
+                  <td className="px-2 py-2.5">
                     <Link
                       href={documentPath(type)}
                       className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[#9CA3AF] opacity-0 transition group-hover:opacity-100 hover:bg-black/[0.04] hover:text-[#374151]"
@@ -109,11 +108,8 @@ export function DocumentTypesPanel({ stats }: Props) {
         </table>
       </div>
 
-      <div className="mt-auto border-t border-[#F3F4F6] bg-[#FAFBFC]/50 px-5 py-4 sm:px-6">
-        <p className="text-[12px] leading-relaxed text-[#6B7280]">
-          Chaque type dispose de son propre flux numéroté, aperçu PDF et export.
-        </p>
-        <Button variant="secondary" size="sm" asChild className="mt-3 w-full sm:w-auto">
+      <div className="mt-auto border-t border-[#F3F4F6] bg-[#FAFBFC]/50 px-4 py-3">
+        <Button variant="secondary" size="sm" asChild className="w-full sm:w-auto">
           <Link href="/settings">Configurer le modèle PDF</Link>
         </Button>
       </div>

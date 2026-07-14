@@ -29,6 +29,7 @@ import {
   normalizeDocumentTemplate,
   type DocumentTemplateId,
 } from "@/lib/document-templates";
+import { resolvePreviewCompanySettings } from "@/lib/company-settings-display";
 import { hasSellerFooter } from "@/lib/seller-footer";
 
 const SAMPLE_LINES = [
@@ -108,24 +109,23 @@ export default function SettingsPage() {
   }, [settings, orgId, orgName]);
 
   const previewSettings = useMemo(
-    () => ({
-      sellerName: form.sellerName || "Aga Plus",
-      sellerActivity: form.sellerActivity,
-      sellerAddress: form.sellerAddress,
-      sellerPhone: form.sellerPhone,
-      sellerWebsite: form.sellerWebsite,
-      sellerEmail: form.sellerEmail,
-      sellerIce: form.sellerIce,
-      sellerIf: form.sellerIf,
-      sellerRc: form.sellerRc,
-      sellerCnss: form.sellerCnss,
-      sellerLegal: "",
-      sellerContact: "",
-      logoUrl: logoPreview,
-      cachetUrl: cachetPreview,
-      documentTemplate: form.documentTemplate,
-      documentColor: form.documentColor,
-    }),
+    () =>
+      resolvePreviewCompanySettings({
+        sellerName: form.sellerName,
+        sellerActivity: form.sellerActivity,
+        sellerAddress: form.sellerAddress,
+        sellerPhone: form.sellerPhone,
+        sellerWebsite: form.sellerWebsite,
+        sellerEmail: form.sellerEmail,
+        sellerIce: form.sellerIce,
+        sellerIf: form.sellerIf,
+        sellerRc: form.sellerRc,
+        sellerCnss: form.sellerCnss,
+        logoUrl: logoPreview,
+        cachetUrl: cachetPreview,
+        documentTemplate: form.documentTemplate,
+        documentColor: form.documentColor,
+      }),
     [form, logoPreview, cachetPreview],
   );
 
@@ -171,17 +171,10 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Modèle société"
-        description={
-          org
-            ? `Paramètres pour ${org.name} — logo, mise en page et identité PDF.`
-            : "Mise en page, logo, cachet et identité appliqués à l'aperçu et aux PDF exportés."
-        }
-      />
+      <PageHeader title="Modèle société" />
 
-      <div className="grid gap-6 xl:grid-cols-12">
-        <div className="space-y-6 xl:col-span-7">
+      <div className="grid gap-4 xl:grid-cols-12">
+        <div className="space-y-4 xl:col-span-7">
           <Card>
             <CardContent className="p-6">
               {settings === undefined ? (
@@ -192,9 +185,6 @@ export default function SettingsPage() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <h2 className={sectionTitleClass}>Design des documents</h2>
-                        <p className="mt-1 text-sm text-[#6B7280]">
-                          Modèle et couleur appliqués à l&apos;aperçu et aux PDF exportés.
-                        </p>
                       </div>
                       <Button type="button" variant="secondary" onClick={() => setDesignOpen(true)}>
                         <Palette className="h-4 w-4" />
@@ -202,15 +192,12 @@ export default function SettingsPage() {
                       </Button>
                     </div>
 
-                    <div className="mt-5 flex items-start gap-4 rounded-xl border border-black/[0.08] bg-[#FAFBFC] p-4">
+                    <div className="mt-3 flex items-start gap-3 rounded-lg border border-black/[0.08] bg-[#FAFBFC] p-3">
                       <div className="w-[140px] shrink-0">
                         <TemplateThumbnail meta={selectedTemplate} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-ink">{selectedTemplate.label}</p>
-                        <p className="mt-1 text-xs leading-relaxed text-[#6B7280]">
-                          {selectedTemplate.description}
-                        </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           {selectedTemplate.tags.map((tag) => (
                             <span
@@ -241,7 +228,7 @@ export default function SettingsPage() {
 
                   <section className="border-t border-black/[0.06] pt-6">
                     <h2 className={sectionTitleClass}>Identité entreprise</h2>
-                    <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
                       <LogoUpload
                         logoUrl={logoPreview}
                         logoStorageId={form.logoStorageId}
@@ -321,10 +308,7 @@ export default function SettingsPage() {
 
                   <section className="border-t border-black/[0.06] pt-6">
                     <h2 className={sectionTitleClass}>Coordonnées</h2>
-                    <p className="mt-1 text-sm text-[#6B7280]">
-                      Affichées dans le pied de page des documents (aperçu et PDF).
-                    </p>
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="sellerPhone">Téléphone</Label>
                         <Input
@@ -364,7 +348,7 @@ export default function SettingsPage() {
 
                   <section className="border-t border-black/[0.06] pt-6">
                     <h2 className={sectionTitleClass}>Identifiants légaux</h2>
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="sellerIce">ICE</Label>
                         <Input
@@ -441,6 +425,8 @@ export default function SettingsPage() {
               notes="Validité 30 jours. Paiement à réception."
               settings={previewSettings}
               templateId={form.documentTemplate}
+              showCachet={!!cachetPreview}
+              previewMode
               scale="fit"
             />
           </div>

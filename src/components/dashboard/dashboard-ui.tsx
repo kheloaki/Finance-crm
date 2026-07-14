@@ -3,7 +3,10 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const dashboardCardClass =
-  "rounded-2xl border border-black/[0.05] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_24px_rgba(15,23,42,0.05)]";
+  "rounded-xl border border-black/[0.05] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_24px_rgba(15,23,42,0.05)]";
+
+export const dashboardSectionPaddingClass = "p-4";
+export const dashboardSectionHeaderClass = "border-b border-[#F3F4F6] px-4 py-3";
 
 export function DashboardSectionHeader({
   title,
@@ -19,7 +22,7 @@ export function DashboardSectionHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-start justify-between gap-4", className)}>
+    <div className={cn("flex items-start justify-between gap-3", className)}>
       <div className="min-w-0">
         <h2 className="text-[17px] font-semibold tracking-tight text-ink">{title}</h2>
         {subtitle ? <p className="mt-0.5 text-[13px] leading-relaxed text-[#6B7280]">{subtitle}</p> : null}
@@ -100,8 +103,8 @@ export function DashboardLinkRow({
       className={cn(
         "group flex items-center gap-3 rounded-xl border transition-all",
         featured
-          ? "border-black/[0.08] bg-[#FAFBFC] px-4 py-3.5 hover:border-black/[0.12] hover:bg-white hover:shadow-sm"
-          : "border-transparent px-2 py-2 hover:bg-[#FAFBFC]",
+          ? "border-black/[0.08] bg-[#FAFBFC] px-3 py-2.5 hover:border-black/[0.12] hover:bg-white hover:shadow-sm"
+          : "border-transparent px-1.5 py-1.5 hover:bg-[#FAFBFC]",
       )}
     >
       <div

@@ -14,9 +14,10 @@ type Props = {
   value: string;
   onChange: (projectId: string) => void;
   readOnly?: boolean;
+  fieldClassName?: string;
 };
 
-export function ProjectSelect({ value, onChange, readOnly }: Props) {
+export function ProjectSelect({ value, onChange, readOnly, fieldClassName }: Props) {
   const projects = useQuery(api.folders.list);
   const createProject = useMutation(api.folders.create);
 
@@ -39,9 +40,11 @@ export function ProjectSelect({ value, onChange, readOnly }: Props) {
     }
   }
 
+  const fieldClass = fieldClassName ?? inputClass;
+
   if (projects === undefined) {
     return (
-      <div className={cn(inputClass, "flex items-center gap-2 bg-[#F9FAFB] text-[#9CA3AF]")}>
+      <div className={cn(fieldClass, "flex items-center gap-2 bg-[#F9FAFB] text-[#9CA3AF]")}>
         <Loader2 className="h-4 w-4 animate-spin" />
         Loading projects…
       </div>
@@ -51,7 +54,7 @@ export function ProjectSelect({ value, onChange, readOnly }: Props) {
   return (
     <div className="space-y-3">
       <select
-        className={cn(inputClass, readOnly && "bg-[#F9FAFB]")}
+        className={cn(fieldClass, readOnly && "bg-[#F9FAFB]")}
         value={value}
         disabled={readOnly}
         onChange={(e) => onChange(e.target.value)}

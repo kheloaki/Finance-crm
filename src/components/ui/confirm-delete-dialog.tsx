@@ -48,7 +48,7 @@ export function ConfirmDeleteDialog({
     <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} role="presentation" />
       <div
-        className="relative w-full max-w-md rounded-2xl border border-black/[0.08] bg-white p-5 shadow-2xl"
+        className="relative w-full max-w-md rounded-xl border border-black/[0.08] bg-white p-4 shadow-2xl"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-delete-title"

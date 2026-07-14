@@ -14,6 +14,7 @@ export function SearchableSelect({
   placeholder = "Sélectionner…",
   disabled,
   className,
+  triggerClassName,
 }: {
   options: SelectOption[];
   value: string;
@@ -21,6 +22,7 @@ export function SearchableSelect({
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -43,7 +45,7 @@ export function SearchableSelect({
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          inputClass,
+          triggerClassName ?? inputClass,
           "flex items-center justify-between gap-2 text-left",
           disabled && "cursor-not-allowed opacity-60",
         )}

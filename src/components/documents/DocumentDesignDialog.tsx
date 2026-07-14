@@ -15,7 +15,10 @@ import type { DocumentColorId } from "@/lib/document-colors";
 import { DOCUMENT_LABELS, DOCUMENT_TYPES, type DocumentType } from "@/lib/documents";
 import type { CompanySettings } from "@/lib/convex-types";
 import {
-  defaultPreviewSettings,
+  resolveDocumentCompanySettings,
+  resolvePreviewCompanySettings,
+} from "@/lib/company-settings-display";
+import {
   getDocumentPreviewSample,
   type DocumentPreviewSample,
 } from "@/lib/document-preview-sample";
@@ -56,14 +59,16 @@ export function DocumentDesignDialog({
     setPreviewType(previewOverride?.documentType ?? "devis");
   }, [open, initialTemplateId, initialColorId, previewOverride?.documentType]);
 
-  const previewSettings = useMemo(
-    () => ({
-      ...defaultPreviewSettings(settings),
+  const previewSettings = useMemo(() => {
+    const resolved = previewOverride
+      ? resolveDocumentCompanySettings(settings)
+      : resolvePreviewCompanySettings(settings);
+    return {
+      ...resolved,
       documentTemplate: templateId,
       documentColor: colorId,
-    }),
-    [settings, templateId, colorId],
-  );
+    };
+  }, [settings, templateId, colorId, previewOverride]);
 
   const sample = useMemo(() => {
     const base = getDocumentPreviewSample(previewType, previewSettings);
@@ -104,7 +109,7 @@ export function DocumentDesignDialog({
         aria-labelledby="document-design-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-black/[0.06] px-4 py-4 sm:px-6">
+        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-black/[0.06] px-3 py-3 sm:px-4">
           <div>
             <h2 id="document-design-title" className="text-lg font-semibold text-ink">
               Choisir le design du document
@@ -164,9 +169,6 @@ export function DocumentDesignDialog({
                   >
                     <TemplateThumbnail meta={tpl} />
                     <p className="mt-2 text-xs font-semibold text-ink">{tpl.label}</p>
-                    <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[#6B7280]">
-                      {tpl.description}
-                    </p>
                     {selected ? (
                       <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-ink">
                         <Check className="h-3 w-3" /> Sélectionné
@@ -214,6 +216,8 @@ export function DocumentDesignDialog({
                 notes={sample.notes}
                 settings={previewSettings}
                 templateId={templateId}
+                previewMode={!previewOverride}
+                showCachet={!previewOverride ? !!settings?.cachetUrl : false}
               />
             </div>
           </div>

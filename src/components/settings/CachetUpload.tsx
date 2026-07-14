@@ -111,10 +111,6 @@ export function CachetUpload({ cachetUrl, onUploaded, onRemoved, disabled }: Pro
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <p className="text-sm font-medium text-ink">Cachet entreprise</p>
-          <p className="text-[11px] leading-relaxed text-[#6B7280]">
-            Photo ou scan acceptés — le fond blanc est retiré automatiquement. Ajoutez le cachet
-            document par document via le bouton « Ajouter cachet » sur chaque devis ou facture.
-          </p>
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"

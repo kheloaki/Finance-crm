@@ -21,6 +21,7 @@ export function HtTtcField({
   compact,
   showLabels = true,
   hint,
+  fieldClassName,
 }: {
   valueHt: number;
   vatRate: number;
@@ -31,6 +32,7 @@ export function HtTtcField({
   compact?: boolean;
   showLabels?: boolean;
   hint?: string;
+  fieldClassName?: string;
 }) {
   const ttc = htToTtc(valueHt, vatRate);
   const [htDraft, setHtDraft] = useState("");
@@ -56,7 +58,10 @@ export function HtTtcField({
     onChangeHt(n == null ? 0 : ttcToHt(n, vatRate));
   }
 
-  const fieldClass = cn(compact ? inputDenseClass : inputClass, "tabular-nums text-right");
+  const fieldClass = cn(
+    fieldClassName ?? (compact ? inputDenseClass : inputClass),
+    "tabular-nums text-right",
+  );
 
   return (
     <div

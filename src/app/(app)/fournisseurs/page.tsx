@@ -37,7 +37,6 @@ export default function FournisseursPage() {
   return (
     <EntityCrudPanel<SupplierRow>
       title="Fournisseurs"
-      description="Référentiel fournisseurs pour les bons de commande."
       items={suppliers}
       fields={FIELDS}
       emptyLabel="Aucun fournisseur enregistré."

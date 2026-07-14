@@ -43,12 +43,14 @@ export const DOCUMENT_BADGE_CLASS: Record<DocumentType, string> = {
 
 export const STATUS_LABELS = {
   draft: "Brouillon",
+  saved: "Enregistré",
   issued: "Émis",
   cancelled: "Annulé",
 } as const;
 
 export const STATUS_BADGE_CLASS = {
   draft: "bg-amber-50 text-amber-700 border-amber-200",
+  saved: "bg-emerald-50 text-emerald-700 border-emerald-200",
   issued: "bg-emerald-50 text-emerald-700 border-emerald-200",
   cancelled: "bg-red-50 text-red-700 border-red-200",
 } as const;

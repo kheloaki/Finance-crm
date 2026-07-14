@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Eye, FileDown, FileText, Folder, FolderOpen, Loader2, Pencil, Plus, Search, X } from "lucide-react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -48,7 +48,6 @@ export function AllDocumentsPage() {
   const [createPending, setCreatePending] = useState(false);
 
   const projectStats = useQuery(api.folders.listWithStats);
-  const currentOrg = useQuery(api.organizations.current);
   const docs = useQuery(api.documents.listAll, {
     folderId: projectFilter && !unfiledOnly ? (projectFilter as Id<"documentFolders">) : undefined,
     unfiledOnly: unfiledOnly || undefined,
@@ -67,11 +66,6 @@ export function AllDocumentsPage() {
       setUnfiledOnly(false);
     }
   }, [urlProject, urlSansProject]);
-
-  const activeProjectName = useMemo(() => {
-    if (unfiledOnly) return "Sans projet";
-    return projectStats?.folders.find((f) => f._id === projectFilter)?.name;
-  }, [projectStats, projectFilter, unfiledOnly]);
 
   const newDocumentProjectId =
     projectFilter && !unfiledOnly ? projectFilter : undefined;
@@ -161,23 +155,17 @@ export function AllDocumentsPage() {
   }
 
   const projectSelectValue = unfiledOnly ? "__unfiled__" : projectFilter;
-  const companyName = currentOrg?.name ?? "your company";
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 pb-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 pb-3">
       <PageHeader
         title="Documents"
-        description={
-          activeProjectName && (projectFilter || unfiledOnly)
-            ? `Project « ${activeProjectName} » — ${companyName}`
-            : `All documents for ${companyName}. Pick a project folder below or create one.`
-        }
         compact
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" />
-              New project
+              Nouveau projet
             </Button>
             <NewDocumentMenu projectId={newDocumentProjectId} />
           </div>

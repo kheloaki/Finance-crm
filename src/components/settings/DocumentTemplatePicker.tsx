@@ -33,9 +33,6 @@ export function DocumentTemplatePicker({
           >
             <TemplateThumbnail meta={tpl} />
             <p className="mt-3 text-sm font-semibold text-ink">{tpl.label}</p>
-            <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#6B7280]">
-              {tpl.description}
-            </p>
             <div className="mt-2 flex flex-wrap gap-1">
               {tpl.tags.map((tag) => (
                 <span

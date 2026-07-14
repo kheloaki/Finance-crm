@@ -1,8 +1,9 @@
+import { resolveDocumentCompanySettings } from "@/lib/company-settings-display";
+import { randomCachetPlacement } from "@/lib/document-cachet-layout";
 import {
   buildDocumentExportModel,
   type DocumentExportInput,
 } from "@/lib/document-export";
-import { randomCachetPlacement } from "@/lib/document-cachet-layout";
 import { renderPdfLayout, type PdfRenderContext } from "@/lib/pdf/document-pdf-layouts";
 import { jsPDF } from "jspdf";
 
@@ -36,12 +37,13 @@ async function loadImageDataUrl(
 
 export async function exportDocumentPdf(input: DocumentExportInput) {
   const model = buildDocumentExportModel(input);
-  const logoDataUrl = model.settings.logoUrl
-    ? (await loadImageDataUrl(model.settings.logoUrl))?.dataUrl ?? null
-    : null;
+  const company = resolveDocumentCompanySettings(model.settings);
+  const logoLoaded = company.logoUrl ? await loadImageDataUrl(company.logoUrl) : null;
+  const logoDataUrl = logoLoaded?.dataUrl ?? null;
+  const logoAspect = logoLoaded?.aspect;
   const cachetLoaded =
-    input.showCachet && model.settings.cachetUrl
-      ? await loadImageDataUrl(model.settings.cachetUrl)
+    input.showCachet && company.cachetUrl
+      ? await loadImageDataUrl(company.cachetUrl)
       : null;
   const cachetDataUrl = cachetLoaded?.dataUrl ?? null;
   const cachetAspect = cachetLoaded?.aspect;
@@ -59,19 +61,20 @@ export async function exportDocumentPdf(input: DocumentExportInput) {
     dateFormatted: model.dateFormatted,
     dueDateFormatted: model.dueDateFormatted,
     reference: model.reference,
-    sellerName: model.settings.sellerName || "Aga Plus",
-    sellerActivity: model.settings.sellerActivity || "",
-    sellerAddress: model.settings.sellerAddress || "",
-    sellerPhone: model.settings.sellerPhone ?? "",
-    sellerWebsite: model.settings.sellerWebsite ?? "",
-    sellerEmail: model.settings.sellerEmail ?? "",
-    sellerIce: model.settings.sellerIce ?? "",
-    sellerIf: model.settings.sellerIf ?? "",
-    sellerRc: model.settings.sellerRc ?? "",
-    sellerCnss: model.settings.sellerCnss ?? "",
-    sellerLegal: model.settings.sellerLegal || "",
-    sellerContact: model.settings.sellerContact || "",
+    sellerName: company.sellerName,
+    sellerActivity: company.sellerActivity,
+    sellerAddress: company.sellerAddress,
+    sellerPhone: company.sellerPhone ?? "",
+    sellerWebsite: company.sellerWebsite ?? "",
+    sellerEmail: company.sellerEmail ?? "",
+    sellerIce: company.sellerIce ?? "",
+    sellerIf: company.sellerIf ?? "",
+    sellerRc: company.sellerRc ?? "",
+    sellerCnss: company.sellerCnss ?? "",
+    sellerLegal: company.sellerLegal,
+    sellerContact: company.sellerContact,
     logoDataUrl,
+    logoAspect,
     cachetDataUrl,
     cachetAspect,
     cachetPlacement,

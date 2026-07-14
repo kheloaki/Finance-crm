@@ -18,6 +18,7 @@ export function CounterpartySelectWithSheet({
   value,
   onChange,
   readOnly,
+  fieldClassName,
 }: {
   kind: "client" | "supplier";
   clients?: ClientRow[];
@@ -25,6 +26,7 @@ export function CounterpartySelectWithSheet({
   value: string;
   onChange: (id: string) => void;
   readOnly?: boolean;
+  fieldClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const isClient = kind === "client";
@@ -59,6 +61,7 @@ export function CounterpartySelectWithSheet({
           placeholder={isClient ? "Choisir un client…" : "Choisir un fournisseur…"}
           disabled={readOnly}
           className="flex-1"
+          triggerClassName={fieldClassName}
         />
         {!readOnly ? (
           <Button
@@ -79,11 +82,6 @@ export function CounterpartySelectWithSheet({
         open={open}
         onClose={() => setOpen(false)}
         title={isClient ? "Nouveau client" : "Nouveau fournisseur"}
-        description={
-          isClient
-            ? "Créez un client — il sera enregistré dans le référentiel et sélectionné sur ce document."
-            : "Créez un fournisseur — il sera enregistré dans le référentiel et sélectionné sur ce document."
-        }
         footer={
           <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
             Fermer

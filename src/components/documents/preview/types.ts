@@ -46,6 +46,7 @@ export type PreviewContext = {
   totalTtc: number;
   netToPay: number;
   settings?: CompanySettings | null;
+  previewMode?: boolean;
   money: (n: number) => string;
   lineTtc: (line: LineItem) => number;
 };

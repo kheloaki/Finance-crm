@@ -59,8 +59,8 @@ function NavLink({
       title={collapsed ? label : undefined}
       aria-label={collapsed ? label : undefined}
       className={cn(
-        "flex items-center rounded-xl py-2 text-[13px] transition-all",
-        collapsed ? "justify-center px-2" : "gap-2.5 px-2.5",
+        "flex items-center rounded-lg py-1.5 text-[13px] transition-all",
+        collapsed ? "justify-center px-1.5" : "gap-2 px-2",
         active
           ? "bg-brand-soft font-semibold text-brand shadow-sm"
           : "text-ink-secondary hover:bg-slate-100/90 hover:text-brand",
@@ -93,14 +93,14 @@ function SidebarPanel({
   return (
     <aside className={cn("flex h-full flex-col", className)}>
       {!collapsed ? (
-        <div className="p-3">
+        <div className="p-2">
           <SearchTrigger variant="sidebar" />
         </div>
       ) : (
         <div className="h-3 shrink-0" />
       )}
 
-      <nav className={cn("flex-1 overflow-y-auto pb-3", collapsed ? "px-1.5" : "px-2")}>
+      <nav className={cn("flex-1 overflow-y-auto pb-2", collapsed ? "px-1" : "px-1.5")}>
         {!collapsed ? <p className={navGroupClass}>Mes sociétés</p> : null}
         <NavLink
           href="/dashboard"
@@ -198,7 +198,7 @@ export function Sidebar() {
             if (e.key === "Enter" || e.key === " ") close();
           }}
         />
-        <div className="absolute inset-y-0 left-0 flex w-[min(300px,calc(100vw-12px))] flex-col p-2">
+        <div className="absolute inset-y-0 left-0 flex w-[min(260px,calc(100vw-12px))] flex-col p-2">
           <div className="glass-panel relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl shadow-2xl">
             <span
               role="button"

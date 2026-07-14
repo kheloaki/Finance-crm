@@ -7,6 +7,7 @@ import {
   DashboardSectionHeader,
   OperationalBadge,
   dashboardCardClass,
+  dashboardSectionPaddingClass,
 } from "@/components/dashboard/dashboard-ui";
 import { ChartSkeleton } from "@/components/ui/loading-skeletons";
 import { cn } from "@/lib/utils";
@@ -33,15 +34,14 @@ export function ActivityOverviewChart({ stats }: Props) {
 
   return (
     <div className={dashboardCardClass}>
-      <div className="p-5 sm:p-6">
+      <div className={dashboardSectionPaddingClass}>
         <DashboardSectionHeader
           title="Aperçu activité"
-          subtitle="Volume documentaire et tendance sur la période."
           actionHref="/documents/facture"
-          actionLabel="Voir toutes les métriques"
+          actionLabel="Voir les factures"
         />
 
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-b border-[#F3F4F6] pb-4">
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-2 border-b border-[#F3F4F6] pb-3">
           <div className="flex flex-wrap gap-3">
             <DashboardFilterSelect
               label="Environnement"

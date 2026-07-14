@@ -128,7 +128,6 @@ export function DocumentListPage({ documentType }: { documentType: DocumentType 
     <div className="flex h-full min-h-0 flex-col">
       <PageHeader
         title={DOCUMENT_LABELS[documentType]}
-        description={`Consultez et créez vos ${DOCUMENT_LABELS[documentType].toLowerCase()}s.`}
         compact
         actions={
           <Button asChild>

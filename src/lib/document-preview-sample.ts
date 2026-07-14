@@ -1,7 +1,6 @@
 import type { CompanySettings } from "@/lib/convex-types";
 import type { DocumentType, LineItem } from "@/lib/documents";
-import { DEFAULT_DOCUMENT_TEMPLATE } from "@/lib/document-templates";
-import { DEFAULT_DOCUMENT_COLOR } from "@/lib/document-colors";
+import { resolvePreviewCompanySettings } from "@/lib/company-settings-display";
 
 const BASE_LINES: LineItem[] = [
   {
@@ -168,22 +167,5 @@ export function getDocumentPreviewSample(
 }
 
 export function defaultPreviewSettings(settings?: CompanySettings | null): CompanySettings {
-  return {
-    sellerName: settings?.sellerName ?? "Aga Plus",
-    sellerActivity: settings?.sellerActivity ?? "Services & travaux",
-    sellerAddress: settings?.sellerAddress ?? "Casablanca, Maroc",
-    sellerPhone: settings?.sellerPhone ?? "06 00 00 00 00",
-    sellerWebsite: settings?.sellerWebsite,
-    sellerEmail: settings?.sellerEmail ?? "contact@agaplus.ma",
-    sellerIce: settings?.sellerIce,
-    sellerIf: settings?.sellerIf,
-    sellerRc: settings?.sellerRc,
-    sellerCnss: settings?.sellerCnss,
-    sellerLegal: settings?.sellerLegal ?? "",
-    sellerContact: settings?.sellerContact ?? "",
-    logoUrl: settings?.logoUrl,
-    cachetUrl: settings?.cachetUrl,
-    documentTemplate: settings?.documentTemplate ?? DEFAULT_DOCUMENT_TEMPLATE,
-    documentColor: settings?.documentColor ?? DEFAULT_DOCUMENT_COLOR,
-  };
+  return resolvePreviewCompanySettings(settings);
 }
