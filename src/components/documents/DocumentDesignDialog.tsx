@@ -217,7 +217,7 @@ export function DocumentDesignDialog({
                 settings={previewSettings}
                 templateId={templateId}
                 previewMode={!previewOverride}
-                showCachet={!previewOverride ? !!settings?.cachetUrl : false}
+                showCachet={false}
               />
             </div>
           </div>

@@ -181,6 +181,7 @@ export function LineItemsEditor({
   vatRate = 20,
   autoOpenCatalog,
   embedded,
+  darkHead,
 }: {
   lines: LineItem[];
   onChange: (lines: LineItem[]) => void;
@@ -192,6 +193,8 @@ export function LineItemsEditor({
   autoOpenCatalog?: boolean;
   /** Inside document paper — compact chrome */
   embedded?: boolean;
+  /** Dark table header (invoice-style layouts) */
+  darkHead?: boolean;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState("");
@@ -218,7 +221,10 @@ export function LineItemsEditor({
   const productCount = lines.filter((l) => !l.isNote && l.designation.trim()).length;
   const lineFieldClass = embedded ? docFieldDenseClass : inputDenseClass;
   const lineHeadClass = embedded
-    ? `${tableHeadClass} px-1.5 py-1 text-[10px]`
+    ? cn(
+        `${tableHeadClass} px-1.5 py-1 text-[10px]`,
+        darkHead && "!border-slate-900 !bg-slate-900 !text-white",
+      )
     : `${tableHeadClass} px-2 py-2`;
   const lineCellClass = embedded
     ? "border-b border-slate-100 px-1.5 py-1 align-top text-[11px] text-ink-secondary"
@@ -365,7 +371,6 @@ export function LineItemsEditor({
               <thead>
                 <tr>
                   {!readOnly ? <th className={`${lineHeadClass} w-7`} /> : null}
-                  <th className={`${lineHeadClass} w-[4.5rem]`}>Réf.</th>
                   <th className={`${lineHeadClass} min-w-[9rem]`}>Désignation</th>
                   <th className={`${lineHeadClass} w-20`}>Unité</th>
                   <th className={`${lineHeadClass} w-12 text-right`}>Qté</th>
@@ -383,7 +388,7 @@ export function LineItemsEditor({
                   line.isNote ? (
                     <tr key={index} className="bg-amber-50/50">
                       {!readOnly ? <td className={lineCellClass} /> : null}
-                      <td colSpan={hideAmounts ? 4 : 6} className={lineCellClass}>
+                      <td colSpan={hideAmounts ? 3 : 5} className={lineCellClass}>
                         <div className="flex items-start gap-2">
                           <StickyNote className="mt-2 h-4 w-4 shrink-0 text-amber-600" />
                           {readOnly ? (
@@ -415,18 +420,6 @@ export function LineItemsEditor({
                           {index + 1}
                         </td>
                       ) : null}
-                      <td className={lineCellClass}>
-                        {readOnly ? (
-                          line.reference || "—"
-                        ) : (
-                          <input
-                            className={lineFieldClass}
-                            value={line.reference}
-                            onChange={(e) => updateLine(index, { reference: e.target.value })}
-                            placeholder="Réf."
-                          />
-                        )}
-                      </td>
                       <td className={lineCellClass}>
                         {readOnly ? (
                           line.designation

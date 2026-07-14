@@ -17,6 +17,9 @@ export const DOCUMENT_TEMPLATE_IDS = [
   "interim",
   "bluepro",
   "studio",
+  "ledger",
+  "folio",
+  "ruby",
 ] as const;
 
 export type DocumentTemplateId = (typeof DOCUMENT_TEMPLATE_IDS)[number];
@@ -172,6 +175,33 @@ export const DOCUMENT_TEMPLATES: DocumentTemplateMeta[] = [
     tags: ["Agence", "Digital"],
     layoutKind: "studio",
     defaultColor: "navy",
+  },
+  {
+    id: "ledger",
+    label: "Ledger",
+    description:
+      "Facture épurée : logo à gauche, société à droite, titre centré, bandeau dates et tableau foncé.",
+    tags: ["Facture", "Pro", "Épuré"],
+    layoutKind: "ledger",
+    defaultColor: "teal",
+  },
+  {
+    id: "folio",
+    label: "Folio",
+    description:
+      "En-tête coloré plein largeur, solde dû en bandeau, métadonnées en grille et totaux encadrés.",
+    tags: ["Facture", "Bandeau", "Pro"],
+    layoutKind: "folio",
+    defaultColor: "amber",
+  },
+  {
+    id: "ruby",
+    label: "Ruby",
+    description:
+      "Accent rouge : client à gauche, titre à droite, encart solde dû et barre total colorée.",
+    tags: ["Facture", "Accent", "Épuré"],
+    layoutKind: "ruby",
+    defaultColor: "crimson",
   },
 ];
 

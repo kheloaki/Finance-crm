@@ -41,6 +41,9 @@ export const documentTemplateValidator = v.union(
   v.literal("interim"),
   v.literal("bluepro"),
   v.literal("studio"),
+  v.literal("ledger"),
+  v.literal("folio"),
+  v.literal("ruby"),
 );
 
 export const documentColorValidator = v.union(

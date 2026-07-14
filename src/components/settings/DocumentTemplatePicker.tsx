@@ -296,6 +296,73 @@ export function TemplateThumbnail({ meta }: { meta: DocumentTemplateMeta }) {
           <BannerMini className="bg-indigo-500" />
         </ThumbFrame>
       );
+    case "ledger":
+      return (
+        <ThumbFrame body="bg-white">
+          <div className="flex justify-between px-1.5 pt-1">
+            <div className="h-3 w-3 rounded-full bg-teal-800" />
+            <div className="space-y-0.5 text-right">
+              <div className="ml-auto h-1.5 w-8 rounded-sm bg-neutral-800" />
+              <div className="ml-auto h-1 w-10 rounded-sm bg-neutral-300" />
+            </div>
+          </div>
+          <div className="mx-auto mt-0.5 h-1.5 w-8 rounded-sm bg-neutral-500" />
+          <div className="mx-1.5 mt-0.5 h-2 bg-teal-950" />
+          <TableMini head="bg-teal-950" compact />
+          <div className="mx-1.5 mt-0.5 ml-auto h-2 w-8 rounded-sm bg-neutral-800" />
+        </ThumbFrame>
+      );
+    case "folio":
+      return (
+        <ThumbFrame body="bg-white">
+          <div className="flex h-[28%] items-center justify-between gap-1 bg-amber-500/90 px-1.5">
+            <div className="h-2.5 w-2.5 rounded-full bg-white/90" />
+            <div className="h-1.5 w-6 rounded-sm bg-white/80" />
+            <div className="h-2 w-7 rounded-sm bg-white/50" />
+          </div>
+          <div className="flex justify-end bg-neutral-100 px-1.5 py-0.5">
+            <div className="h-1.5 w-10 rounded-sm bg-neutral-800" />
+          </div>
+          <div className="mx-1.5 mt-0.5 grid grid-cols-2 gap-1">
+            <div className="h-3 rounded-sm bg-neutral-100" />
+            <div className="space-y-0.5">
+              <div className="ml-auto h-1 w-8 rounded-sm bg-neutral-300" />
+              <div className="ml-auto h-1 w-6 rounded-sm bg-neutral-400" />
+            </div>
+          </div>
+          <div className="mx-1.5 mt-0.5 h-px bg-neutral-200" />
+          <ListMini className="mt-0.5" />
+          <div className="mx-1.5 mt-0.5 ml-auto h-3 w-10 rounded-sm bg-neutral-100" />
+        </ThumbFrame>
+      );
+    case "ruby":
+      return (
+        <ThumbFrame body="bg-white">
+          <div className="flex justify-between px-1.5 pt-1.5">
+            <div className="space-y-0.5">
+              <div className="h-1 w-6 rounded-sm bg-rose-600" />
+              <div className="h-1.5 w-8 rounded-sm bg-neutral-800" />
+            </div>
+            <div className="space-y-0.5 text-right">
+              <div className="ml-auto h-2 w-8 rounded-sm bg-rose-600" />
+              <div className="ml-auto h-1 w-6 rounded-sm bg-neutral-300" />
+            </div>
+          </div>
+          <div className="mx-1.5 mt-1 grid grid-cols-2 gap-1">
+            <div className="space-y-0.5">
+              <div className="h-1 w-7 rounded-sm bg-rose-500/80" />
+              <div className="h-1 w-5 rounded-sm bg-neutral-300" />
+            </div>
+            <div className="border-t border-r border-rose-600 p-0.5">
+              <div className="h-1 w-full rounded-sm bg-rose-600" />
+              <div className="mt-0.5 h-1.5 w-full rounded-sm bg-neutral-800" />
+            </div>
+          </div>
+          <div className="mx-1.5 mt-1 h-px bg-rose-600/70" />
+          <ListMini className="mt-0.5" />
+          <div className="mx-1.5 mt-0.5 ml-auto h-2.5 w-10 rounded-sm bg-rose-600" />
+        </ThumbFrame>
+      );
     default:
       return null;
   }

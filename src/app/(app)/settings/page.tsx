@@ -425,7 +425,7 @@ export default function SettingsPage() {
               notes="Validité 30 jours. Paiement à réception."
               settings={previewSettings}
               templateId={form.documentTemplate}
-              showCachet={!!cachetPreview}
+              showCachet={false}
               previewMode
               scale="fit"
             />

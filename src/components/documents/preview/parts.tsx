@@ -30,7 +30,6 @@ export function PaperFrame({
         }}
       >
         {children}
-        <DocumentCachetZone ctx={ctx} />
       </article>
     );
   }
@@ -46,7 +45,8 @@ export function PaperFrame({
         }}
       >
         {children}
-        <DocumentCachetZone ctx={ctx} />
+        {/* Cachet is for PDF export — keep design previews clean */}
+        {!ctx.previewMode ? <DocumentCachetZone ctx={ctx} /> : null}
       </article>
     </div>
   );
@@ -196,7 +196,7 @@ export function LinesSpreadsheet({
     <table className="w-full border-collapse text-[0.8em]">
       <thead>
         <tr style={head}>
-          {["Réf.", "Désignation", "U", "Qté", "PU HT", "TTC"].map((h) => (
+          {["Désignation", "U", "Qté", "PU HT", "TTC"].map((h) => (
             <th key={h} className="border p-1 text-left last:text-right">
               {h}
             </th>
@@ -206,14 +206,13 @@ export function LinesSpreadsheet({
       <tbody>
         {products.length === 0 ? (
           <tr>
-            <td colSpan={6} className="border p-4 text-center italic text-slate-400">
+            <td colSpan={5} className="border p-4 text-center italic text-slate-400">
               Aucune ligne
             </td>
           </tr>
         ) : (
             products.map((line, i) => (
               <tr key={i} style={i % 2 === 1 ? stripeStyle : undefined}>
-                <td className="border p-1.5 align-top text-slate-500">{line.reference || "—"}</td>
                 <td className="border p-1.5 align-top font-medium break-words whitespace-normal leading-snug">
                   {line.designation}
                 </td>

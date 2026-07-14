@@ -223,7 +223,6 @@ function drawMetaChips(ctx: PdfRenderContext, y: number) {
   let x = margin;
   const chips: [string, string][] = [["Date", ctx.dateFormatted]];
   if (ctx.dueDateFormatted) chips.push(["Échéance", ctx.dueDateFormatted]);
-  if (ctx.reference?.trim()) chips.push(["Réf.", ctx.reference.trim()]);
 
   for (const [k, v] of chips) {
     doc.setFillColor(248, 250, 252);
@@ -286,11 +285,11 @@ function drawSpreadsheetTable(
   const headRgb = opts?.headRgb ?? theme.primaryDarkRgb;
   const stripeRgb = hexToRgb(theme.surface);
   const colWidths = delivery
-    ? [tableW * 0.12, tableW * 0.44, tableW * 0.1, tableW * 0.12]
-    : [tableW * 0.1, tableW * 0.38, tableW * 0.08, tableW * 0.1, tableW * 0.13, tableW * 0.13];
+    ? [tableW * 0.56, tableW * 0.22, tableW * 0.22]
+    : [tableW * 0.44, tableW * 0.1, tableW * 0.12, tableW * 0.17, tableW * 0.17];
   const headers = delivery
-    ? ["Réf.", "Désignation", "Unité", "Qté"]
-    : ["Réf.", "Désignation", "U", "Qté", "PU HT", "TTC"];
+    ? ["Désignation", "Unité", "Qté"]
+    : ["Désignation", "U", "Qté", "PU HT", "TTC"];
   const lineHeight = 4.2;
   const cellPad = 2;
 
@@ -325,9 +324,8 @@ function drawSpreadsheetTable(
     }
 
     const cells = delivery
-      ? [line.reference || "—", line.designation, line.unit, String(line.qty)]
+      ? [line.designation, line.unit, String(line.qty)]
       : [
-          line.reference || "—",
           line.designation,
           line.unit,
           String(line.qty),
@@ -349,7 +347,7 @@ function drawSpreadsheetTable(
 
     x = margin + cellPad;
     wrappedCells.forEach((wrapped, i) => {
-      const align = !delivery && i >= 4 ? ("right" as const) : undefined;
+      const align = !delivery && i >= 3 ? ("right" as const) : undefined;
       doc.text(wrapped, x + (align === "right" ? colWidths[i] - cellPad : 0), y + 4, {
         align,
       });
@@ -537,7 +535,7 @@ function drawWarmLines(ctx: PdfRenderContext, y: number) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     textRgb(doc, hexToRgb(theme.primaryDark));
-    const sub = `${line.reference || "—"} · ${line.qty} ${line.unit}`;
+    const sub = `${line.qty} ${line.unit}`;
     doc.text(sub, margin, y + 9);
     if (!delivery) {
       doc.setFont("helvetica", "bold");
@@ -575,13 +573,6 @@ function drawRoyalTable(ctx: PdfRenderContext, y: number) {
       textRgb(doc, [17, 24, 39]);
     }
     doc.text(line.designation.slice(0, 48), margin + 10, y + 4);
-    if (line.reference) {
-      doc.setFontSize(7);
-      textRgb(doc, theme.primaryRgb);
-      doc.text(line.reference.slice(0, 30), margin + 10, y + 8);
-      doc.setFontSize(8);
-      textRgb(doc, [17, 24, 39]);
-    }
     doc.text(String(line.qty), margin + 120, y + 4);
     if (!delivery) {
       doc.text(formatMoney(lineTtc(line.qty, line.unitPriceHt, vatRate)), 168, y + 4, {
@@ -968,77 +959,95 @@ function renderExecutive(ctx: PdfRenderContext) {
 }
 
 function renderCorporate(ctx: PdfRenderContext) {
-  const { doc, margin, label, number, sellerName, sellerActivity, sellerAddress, theme } = ctx;
-  strokeRgb(doc, theme.primaryDarkRgb);
-  doc.setLineWidth(1);
-  doc.rect(8, 8, 194, 281);
-  doc.setLineWidth(0.3);
-  doc.rect(10, 10, 190, 277);
+  const { doc, margin, label, number, sellerName, sellerActivity, sellerAddress } = ctx;
 
-  let y = 14;
+  let y = margin;
   const hasLogo = !!ctx.logoDataUrl;
-  const headerH = hasLogo ? 56 : 42;
-  const leftW = 98;
-  const rightW = 82;
-  strokeRgb(doc, hexToRgb(theme.surfaceBorder));
-  doc.rect(margin, y, leftW, headerH);
-  doc.rect(margin + leftW, y, rightW, headerH);
+  const logo = drawLogo(ctx, margin, y, hasLogo ? 48 : 28, hasLogo ? 32 : 20);
 
-  // Logo already includes company name — do not repeat it beside the logo.
-  const logo = drawLogo(ctx, margin + 4, y + 4, hasLogo ? 56 : 36, hasLogo ? 36 : 28);
+  // Large document title on the right
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  textRgb(doc, [51, 65, 85]);
+  doc.text(label.toUpperCase(), 196, y + 8, { align: "right" });
 
   if (!hasLogo) {
-    const textX = margin + 3;
-    const textMaxW = leftW - 6;
     doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
     textPrimaryDark(ctx);
-    const nameLines = doc.splitTextToSize(sellerName.toUpperCase(), textMaxW);
-    doc.text(nameLines, textX, y + 12);
-    let ty = y + 12 + nameLines.length * 5;
+    doc.text(sellerName, margin, y + logo.h + 6);
+    let ty = y + logo.h + 11;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     if (sellerActivity) {
-      const actLines = doc.splitTextToSize(sellerActivity, textMaxW);
-      doc.text(actLines, textX, ty);
-      ty += actLines.length * 4;
+      textRgb(doc, [100, 116, 139]);
+      doc.text(sellerActivity, margin, ty);
+      ty += 4;
     }
     if (sellerAddress) {
-      const addrLines = doc.splitTextToSize(sellerAddress, textMaxW);
       textRgb(doc, [100, 116, 139]);
-      doc.text(addrLines, textX, ty);
+      const addrLines = doc.splitTextToSize(sellerAddress, 95);
+      doc.text(addrLines, margin, ty);
+      y = ty + addrLines.length * 3.8 + 6;
+    } else {
+      y = ty + 6;
     }
   } else if (sellerAddress) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     textRgb(doc, [100, 116, 139]);
-    const addrLines = doc.splitTextToSize(sellerAddress, leftW - 8);
-    doc.text(addrLines, margin + 4, y + Math.max(logo.h + 8, 42));
+    const addrLines = doc.splitTextToSize(sellerAddress, 95);
+    doc.text(addrLines, margin, y + logo.h + 5);
+    y = y + logo.h + 5 + addrLines.length * 3.6 + 6;
+  } else {
+    y = y + Math.max(logo.h, 14) + 10;
   }
 
+  y = Math.max(y, margin + 36);
+
+  // Bill To (left) + meta (right)
+  const metaX = 130;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  textPrimaryDark(ctx);
-  doc.text(label.toUpperCase(), margin + leftW + 4, y + 16);
+  doc.setFontSize(9);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(`${ctx.counterpartyLabel} :`, margin, y);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(`N° ${number}`, margin + leftW + 4, y + 26);
-  doc.text(`Date : ${ctx.dateFormatted}`, margin + leftW + 4, y + 34);
-  if (ctx.dueDateFormatted) {
-    doc.text(`Éch. : ${ctx.dueDateFormatted}`, margin + leftW + 4, y + 42);
+  doc.text(ctx.counterpartyName || "—", margin, y + 5);
+  let leftY = y + 10;
+  if (ctx.counterpartyIce) {
+    doc.setFontSize(7.5);
+    textRgb(doc, [100, 116, 139]);
+    doc.text(`ICE : ${ctx.counterpartyIce}`, margin, leftY);
+    leftY += 4;
   }
-  y += headerH + 6;
+  const partyAddr = [ctx.counterpartyAddress, ctx.counterpartyCity].filter(Boolean).join(", ");
+  if (partyAddr) {
+    doc.setFontSize(7.5);
+    textRgb(doc, [100, 116, 139]);
+    const addr = doc.splitTextToSize(partyAddr, 100);
+    doc.text(addr, margin, leftY);
+    leftY += addr.length * 3.5;
+  }
 
-  fillSurface(ctx);
-  doc.rect(margin, y, 182, 10, "F");
   doc.setFontSize(8);
+  textRgb(doc, [100, 116, 139]);
+  doc.text("N°", metaX, y);
+  doc.text("Date", metaX, y + 6);
+  if (ctx.dueDateFormatted) doc.text("Échéance", metaX, y + 12);
+  doc.setFont("helvetica", "bold");
   textRgb(doc, [15, 23, 42]);
-  doc.text(`${ctx.counterpartyLabel.toUpperCase()} : ${ctx.counterpartyName}`, margin + 2, y + 7);
-  if (ctx.counterpartyIce) doc.text(`ICE ${ctx.counterpartyIce}`, margin + 100, y + 7);
-  y += 14;
+  doc.text(number, 196, y, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.text(ctx.dateFormatted, 196, y + 6, { align: "right" });
+  if (ctx.dueDateFormatted) doc.text(ctx.dueDateFormatted, 196, y + 12, { align: "right" });
 
-  y = drawSpreadsheetTable(ctx, y);
-  if (!ctx.delivery) y = drawTotalsCorporateGrid(ctx, y + 2);
+  y = Math.max(leftY, y + (ctx.dueDateFormatted ? 18 : 12)) + 6;
+
+  y = drawSpreadsheetTable(ctx, y, { headRgb: [17, 24, 39] });
+
+  if (!ctx.delivery) {
+    y = drawTotalsMinimalRight(ctx, y + 4);
+  }
   y = drawNotes(ctx, y + 2);
   finishLayout(ctx, y);
 }
@@ -1387,13 +1396,6 @@ function drawExecutiveTable(ctx: PdfRenderContext, y: number) {
       continue;
     }
     doc.text(line.designation.slice(0, 48), margin + 2, y + 4);
-    if (line.reference) {
-      doc.setFontSize(7);
-      textRgb(doc, [148, 163, 184]);
-      doc.text(line.reference.slice(0, 30), margin + 2, y + 8);
-      doc.setFontSize(8);
-      textRgb(doc, [17, 24, 39]);
-    }
     doc.text(`${line.qty} ${line.unit}`, margin + 120, y + 4);
     if (!delivery) {
       doc.text(formatMoney(lineTtc(line.qty, line.unitPriceHt, vatRate)), 194, y + 4, {
@@ -1903,9 +1905,6 @@ function renderInterim(ctx: PdfRenderContext) {
   textRgb(doc, [17, 24, 39]);
   doc.text(`N° ${number}`, margin + colW + 4, y, { align: "right" });
   doc.text(`Date ${ctx.dateFormatted}`, margin + colW + 4, y + 5, { align: "right" });
-  if (ctx.reference?.trim()) {
-    doc.text(`Réf. ${ctx.reference.trim()}`, margin + colW + 4, y + 10, { align: "right" });
-  }
   y += 18;
 
   y = drawSpreadsheetTable(ctx, y, { headRgb: theme.primaryDarkRgb });
@@ -2049,6 +2048,555 @@ function renderStudio(ctx: PdfRenderContext) {
   finishLayout(ctx, y);
 }
 
+function paymentTermsLabelPdf(date?: string, dueDate?: string): string {
+  if (!date || !dueDate) return "—";
+  const start = new Date(`${date}T12:00:00`);
+  const end = new Date(`${dueDate}T12:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "—";
+  const days = Math.round((end.getTime() - start.getTime()) / 86_400_000);
+  if (days <= 0) return "Comptant";
+  return `Net ${days}`;
+}
+
+function renderLedger(ctx: PdfRenderContext) {
+  const { doc, margin, label, number, sellerName, sellerActivity, sellerAddress, theme } = ctx;
+
+  let y = margin;
+  const hasLogo = !!ctx.logoDataUrl;
+  const logo = drawLogo(ctx, margin, y, hasLogo ? 42 : 28, hasLogo ? 28 : 20);
+
+  // Company block — top right
+  const rightX = 196;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(sellerName, rightX, y + 4, { align: "right" });
+  let rightY = y + 9;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  textRgb(doc, [100, 116, 139]);
+  if (sellerActivity) {
+    doc.text(sellerActivity, rightX, rightY, { align: "right" });
+    rightY += 4;
+  }
+  if (sellerAddress) {
+    const addrLines = doc.splitTextToSize(sellerAddress, 95);
+    for (const line of addrLines) {
+      doc.text(line, rightX, rightY, { align: "right" });
+      rightY += 3.6;
+    }
+  }
+
+  y = Math.max(y + Math.max(logo.h, 14) + 8, rightY + 6);
+
+  // Centered document title
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(14);
+  textRgb(doc, [71, 85, 105]);
+  doc.text(label.toUpperCase(), 105, y, { align: "center" });
+  y += 10;
+
+  // Bill To + Invoice #
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  textRgb(doc, [100, 116, 139]);
+  doc.text(`${ctx.counterpartyLabel}`, margin, y);
+  doc.text("N°", rightX, y, { align: "right" });
+  y += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(ctx.counterpartyName || "—", margin, y);
+  doc.text(number, rightX, y, { align: "right" });
+  let leftY = y + 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  textRgb(doc, [100, 116, 139]);
+  if (ctx.counterpartyIce) {
+    doc.text(`ICE : ${ctx.counterpartyIce}`, margin, leftY);
+    leftY += 3.8;
+  }
+  const partyAddr = [ctx.counterpartyAddress, ctx.counterpartyCity].filter(Boolean).join(", ");
+  if (partyAddr) {
+    const addr = doc.splitTextToSize(partyAddr, 100);
+    doc.text(addr, margin, leftY);
+    leftY += addr.length * 3.5;
+  }
+  y = Math.max(leftY, y + 6) + 6;
+
+  // Date / Terms / Due banner
+  const bannerH = 8;
+  const colW = 182 / 3;
+  fillPrimaryDark(ctx);
+  doc.rect(margin, y, 182, bannerH, "F");
+  textOnPrimary(ctx);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.text("DATE", margin + 2, y + 5.2);
+  doc.text("CONDITIONS", margin + colW + colW / 2, y + 5.2, { align: "center" });
+  doc.text("ÉCHÉANCE", rightX - 2, y + 5.2, { align: "right" });
+  y += bannerH;
+
+  strokeRgb(doc, [226, 232, 240]);
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.4);
+  doc.rect(margin, y, 182, 10);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(ctx.dateFormatted, margin + 2, y + 6.5);
+  doc.text(paymentTermsLabelPdf(ctx.date, ctx.dueDate), margin + colW + colW / 2, y + 6.5, {
+    align: "center",
+  });
+  doc.text(ctx.dueDateFormatted ?? "—", rightX - 2, y + 6.5, { align: "right" });
+  y += 14;
+
+  y = drawSpreadsheetTable(ctx, y, { headRgb: theme.primaryDarkRgb });
+
+  if (!ctx.delivery) {
+    // Thank-you left + totals right
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    textRgb(doc, [100, 116, 139]);
+    doc.text("Merci pour votre confiance.", margin, y + 6);
+    y = drawTotalsMinimalRight(ctx, y + 2);
+  }
+
+  y = drawNotes(ctx, y + 2);
+  finishLayout(ctx, y);
+}
+
+function drawFolioSoftTable(ctx: PdfRenderContext, y: number) {
+  const { doc, margin, delivery, lines, vatRate } = ctx;
+  const tableW = 196 - margin;
+  const colNum = 8;
+  const colQty = 18;
+  const colAmt = delivery ? 0 : 28;
+  const colDesc = tableW - colNum - colQty - colAmt;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  textRgb(doc, [148, 163, 184]);
+  doc.text("#", margin, y);
+  doc.text("ARTICLE & DESCRIPTION", margin + colNum, y);
+  doc.text("QTÉ", margin + colNum + colDesc + colQty - 2, y, { align: "right" });
+  if (!delivery) {
+    doc.text("MONTANT", 196, y, { align: "right" });
+  }
+  y += 2;
+  strokeRgb(doc, [203, 213, 225]);
+  doc.setLineWidth(0.35);
+  doc.line(margin, y, 196, y);
+  y += 5;
+
+  const billable = lines.filter((l) => !l.isNote);
+  billable.forEach((line, i) => {
+    if (y > 255) {
+      doc.addPage();
+      y = margin + 8;
+    }
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    textRgb(doc, [148, 163, 184]);
+    doc.text(String(i + 1), margin, y);
+    doc.setFont("helvetica", "bold");
+    textRgb(doc, [15, 23, 42]);
+    const designationLines = doc.splitTextToSize(line.designation || "—", colDesc - 2);
+    doc.text(designationLines[0] ?? "—", margin + colNum, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    textRgb(doc, [71, 85, 105]);
+    doc.text(String(line.qty), margin + colNum + colDesc + colQty - 2, y, { align: "right" });
+    if (!delivery) {
+      doc.setFont("helvetica", "bold");
+      textRgb(doc, [15, 23, 42]);
+      doc.text(formatMoney(lineTotalTtc(line.qty, line.unitPriceHt, vatRate)), 196, y, {
+        align: "right",
+      });
+    }
+    let rowH = Math.max(5, designationLines.length * 3.6);
+    if (!delivery) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      textRgb(doc, [148, 163, 184]);
+      doc.text(
+        `${line.qty} × ${formatMoney(line.unitPriceHt)}`,
+        margin + colNum,
+        y + 4,
+      );
+      rowH = Math.max(rowH, 8);
+    }
+    if (designationLines.length > 1) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      textRgb(doc, [15, 23, 42]);
+      doc.setFont("helvetica", "bold");
+      for (let li = 1; li < designationLines.length; li++) {
+        doc.text(designationLines[li], margin + colNum, y + li * 3.6);
+      }
+    }
+    y += rowH + 2;
+    strokeRgb(doc, [241, 245, 249]);
+    doc.setLineWidth(0.25);
+    doc.line(margin, y - 1, 196, y - 1);
+  });
+
+  return y + 2;
+}
+
+function drawTotalsFolioBox(ctx: PdfRenderContext, y: number) {
+  const { doc, totalHt, vatAmount, netToPay, vatRate } = ctx;
+  const boxX = 118;
+  const boxW = 78;
+  y = drawAdjustments(ctx, y);
+
+  fillRgb(doc, [243, 244, 246]);
+  doc.rect(boxX, y, boxW, 28, "F");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  textRgb(doc, [100, 116, 139]);
+  let cy = y + 6;
+  doc.text("Sous-total", boxX + 3, cy);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(formatMoney(totalHt), boxX + boxW - 3, cy, { align: "right" });
+  cy += 5;
+  textRgb(doc, [100, 116, 139]);
+  doc.text(`TVA (${vatRate}%)`, boxX + 3, cy);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(formatMoney(vatAmount), boxX + boxW - 3, cy, { align: "right" });
+  cy += 6;
+  doc.setFont("helvetica", "bold");
+  doc.text("Total", boxX + 3, cy);
+  doc.text(formatMoney(netToPay), boxX + boxW - 3, cy, { align: "right" });
+  cy += 5;
+  doc.text("Solde dû", boxX + 3, cy);
+  doc.text(formatMoney(netToPay), boxX + boxW - 3, cy, { align: "right" });
+  return y + 32;
+}
+
+function renderFolio(ctx: PdfRenderContext) {
+  const { doc, margin, label, number, sellerName, sellerAddress } = ctx;
+  const headerH = 32;
+  fillPrimary(ctx);
+  doc.rect(0, 0, 210, headerH, "F");
+
+  let logo = { w: 0, h: 0 };
+  if (ctx.logoDataUrl) {
+    logo = drawLogo(ctx, margin, 6, 28, 20);
+  } else if (sellerName.trim()) {
+    fillRgb(doc, [255, 255, 255]);
+    doc.circle(margin + 8, 16, 7, "F");
+    textRgb(doc, [51, 65, 85]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(sellerName.slice(0, 1).toUpperCase(), margin + 8, 17.5, { align: "center" });
+    logo = { w: 16, h: 16 };
+  }
+
+  textOnPrimary(ctx);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text(label.toUpperCase(), 105, 18, { align: "center" });
+
+  doc.setFontSize(9);
+  doc.text(sellerName, 196, 10, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  if (sellerAddress) {
+    const addrLines = doc.splitTextToSize(sellerAddress, 70);
+    let ay = 14.5;
+    for (const line of addrLines.slice(0, 3)) {
+      doc.text(line, 196, ay, { align: "right" });
+      ay += 3.2;
+    }
+  }
+
+  let y = headerH;
+  void logo;
+
+  if (!ctx.delivery) {
+    fillRgb(doc, [243, 244, 246]);
+    doc.rect(0, y, 210, 10, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    textRgb(doc, [15, 23, 42]);
+    doc.text(`SOLDE DÛ   ${formatMoney(ctx.netToPay)}`, 196, y + 6.5, { align: "right" });
+    y += 14;
+  } else {
+    y += 6;
+  }
+
+  // Client left + meta right
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(ctx.counterpartyName || "—", margin, y);
+  let leftY = y + 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  textRgb(doc, [100, 116, 139]);
+  if (ctx.counterpartyIce) {
+    doc.text(`ICE : ${ctx.counterpartyIce}`, margin, leftY);
+    leftY += 3.8;
+  }
+  const partyAddr = [ctx.counterpartyAddress, ctx.counterpartyCity].filter(Boolean).join(", ");
+  if (partyAddr) {
+    const addr = doc.splitTextToSize(partyAddr, 90);
+    doc.text(addr, margin, leftY);
+    leftY += addr.length * 3.5;
+  }
+
+  const metaX = 125;
+  const metaValX = 196;
+  const terms = paymentTermsLabelPdf(ctx.date, ctx.dueDate);
+  const metaRows: [string, string][] = [
+    ["N°", number],
+    ["Date", ctx.dateFormatted],
+    ["Conditions", terms],
+  ];
+  if (ctx.dueDateFormatted) metaRows.push(["Échéance", ctx.dueDateFormatted]);
+
+  let metaY = y;
+  for (const [k, v] of metaRows) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    textRgb(doc, [148, 163, 184]);
+    doc.text(k, metaX, metaY);
+    doc.setFont("helvetica", "bold");
+    textRgb(doc, [15, 23, 42]);
+    doc.text(v, metaValX, metaY, { align: "right" });
+    metaY += 5;
+  }
+
+  y = Math.max(leftY, metaY) + 8;
+  y = drawFolioSoftTable(ctx, y);
+
+  if (!ctx.delivery) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    textRgb(doc, [148, 163, 184]);
+    doc.text("Merci pour votre confiance.", margin, y + 6);
+    y = drawTotalsFolioBox(ctx, y);
+  }
+
+  y = drawNotes(ctx, y + 2);
+  finishLayout(ctx, y);
+}
+
+function drawRubySoftTable(ctx: PdfRenderContext, y: number) {
+  const { doc, margin, delivery, lines, vatRate, theme } = ctx;
+  const tableW = 196 - margin;
+  const colNum = 8;
+  const colQty = 16;
+  const colRate = delivery ? 0 : 24;
+  const colAmt = delivery ? 0 : 28;
+  const colDesc = tableW - colNum - colQty - colRate - colAmt;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  textRgb(doc, theme.primaryRgb);
+  doc.text("#", margin, y);
+  doc.text("ARTICLE & DESCRIPTION", margin + colNum, y);
+  doc.text("QTÉ", margin + colNum + colDesc + colQty - 2, y, { align: "right" });
+  if (!delivery) {
+    doc.text("PU HT", margin + colNum + colDesc + colQty + colRate - 2, y, { align: "right" });
+    doc.text("MONTANT", 196, y, { align: "right" });
+  }
+  y += 2.5;
+  strokeRgb(doc, theme.primaryRgb);
+  doc.setLineWidth(0.6);
+  doc.line(margin, y, 196, y);
+  y += 5;
+
+  const billable = lines.filter((l) => !l.isNote);
+  billable.forEach((line, i) => {
+    if (y > 250) {
+      doc.addPage();
+      y = margin + 8;
+    }
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    textRgb(doc, [148, 163, 184]);
+    doc.text(String(i + 1), margin, y);
+    doc.setFont("helvetica", "bold");
+    textRgb(doc, [51, 65, 85]);
+    const designationLines = doc.splitTextToSize(line.designation || "—", colDesc - 2);
+    doc.text(designationLines[0] ?? "—", margin + colNum, y);
+    textRgb(doc, [71, 85, 105]);
+    doc.setFont("helvetica", "normal");
+    doc.text(String(line.qty), margin + colNum + colDesc + colQty - 2, y, { align: "right" });
+    if (!delivery) {
+      doc.text(formatMoney(line.unitPriceHt), margin + colNum + colDesc + colQty + colRate - 2, y, {
+        align: "right",
+      });
+      doc.setFont("helvetica", "bold");
+      textRgb(doc, [51, 65, 85]);
+      doc.text(formatMoney(lineTotalTtc(line.qty, line.unitPriceHt, vatRate)), 196, y, {
+        align: "right",
+      });
+    }
+    let rowH = Math.max(5, designationLines.length * 3.6);
+    if (line.unit) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      textRgb(doc, [148, 163, 184]);
+      doc.text(line.unit, margin + colNum, y + 3.8);
+      rowH = Math.max(rowH, 8);
+    }
+    if (designationLines.length > 1) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      textRgb(doc, [51, 65, 85]);
+      for (let li = 1; li < designationLines.length; li++) {
+        doc.text(designationLines[li], margin + colNum, y + li * 3.6);
+      }
+    }
+    y += rowH + 2;
+    strokeRgb(doc, [241, 245, 249]);
+    doc.setLineWidth(0.25);
+    doc.line(margin, y - 1, 196, y - 1);
+  });
+
+  return y + 2;
+}
+
+function renderRuby(ctx: PdfRenderContext) {
+  const { doc, margin, label, number, sellerName, sellerAddress, theme } = ctx;
+  let y = margin;
+
+  // Header: client left, title right
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  textRgb(doc, theme.primaryRgb);
+  doc.text(ctx.counterpartyLabel, margin, y);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text(label.toUpperCase(), 196, y + 2, { align: "right" });
+  y += 5;
+  doc.setFontSize(11);
+  textRgb(doc, [51, 65, 85]);
+  doc.text(ctx.counterpartyName || "—", margin, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  textRgb(doc, [148, 163, 184]);
+  doc.text(number, 196, y + 1, { align: "right" });
+  y += 5;
+  let leftY = y;
+  if (ctx.counterpartyIce) {
+    doc.setFontSize(7.5);
+    textRgb(doc, [148, 163, 184]);
+    doc.text(`ICE : ${ctx.counterpartyIce}`, margin, leftY);
+    leftY += 3.8;
+  }
+  const partyAddr = [ctx.counterpartyAddress, ctx.counterpartyCity].filter(Boolean).join(", ");
+  if (partyAddr) {
+    doc.setFontSize(7.5);
+    textRgb(doc, [148, 163, 184]);
+    const addr = doc.splitTextToSize(partyAddr, 95);
+    doc.text(addr, margin, leftY);
+    leftY += addr.length * 3.5;
+  }
+
+  y = Math.max(leftY, y + 6) + 6;
+
+  // Meta left + balance due L-box right
+  const terms = paymentTermsLabelPdf(ctx.date, ctx.dueDate);
+  const metaRows: [string, string][] = [
+    ["Date", ctx.dateFormatted],
+    ["Conditions", terms],
+  ];
+  if (ctx.dueDateFormatted) metaRows.push(["Échéance", ctx.dueDateFormatted]);
+
+  let metaY = y;
+  for (const [k, v] of metaRows) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    textRgb(doc, theme.primaryRgb);
+    doc.text(k, margin, metaY);
+    doc.setFont("helvetica", "bold");
+    textRgb(doc, [71, 85, 105]);
+    doc.text(v, margin, metaY + 4.5);
+    metaY += 11;
+  }
+
+  if (!ctx.delivery) {
+    const boxX = 130;
+    const boxW = 66;
+    const boxH = 18;
+    strokeRgb(doc, theme.primaryRgb);
+    doc.setLineWidth(1.1);
+    doc.line(boxX, y, boxX + boxW, y);
+    doc.line(boxX + boxW, y, boxX + boxW, y + boxH);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    textRgb(doc, theme.primaryRgb);
+    doc.text("Solde dû", boxX + boxW - 3, y + 6, { align: "right" });
+    doc.setFontSize(12);
+    textRgb(doc, [51, 65, 85]);
+    doc.text(formatMoney(ctx.netToPay), boxX + boxW - 3, y + 13.5, { align: "right" });
+  }
+
+  y = Math.max(metaY, y + (ctx.delivery ? 0 : 22)) + 6;
+  y = drawRubySoftTable(ctx, y);
+
+  if (!ctx.delivery) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    textRgb(doc, [148, 163, 184]);
+    doc.text("Merci pour votre confiance.", margin, y + 6);
+
+    y = drawAdjustments(ctx, y);
+    const rightX = 196;
+    const labelX = 130;
+    doc.setFontSize(8);
+    const rows: [string, string, boolean?][] = [
+      ["Sous-total", formatMoney(ctx.totalHt)],
+      [`TVA (${ctx.vatRate}%)`, formatMoney(ctx.vatAmount)],
+      ["Total", formatMoney(ctx.netToPay), true],
+    ];
+    for (const [k, v, bold] of rows) {
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      textRgb(doc, theme.primaryRgb);
+      doc.text(k, labelX, y, { align: "right" });
+      textRgb(doc, [51, 65, 85]);
+      doc.text(v, rightX, y, { align: "right" });
+      y += 5;
+    }
+    y += 2;
+    fillPrimary(ctx);
+    doc.rect(labelX - 2, y, rightX - (labelX - 2), 10, "F");
+    textOnPrimary(ctx);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("Solde dû", labelX + 2, y + 6.5);
+    doc.text(formatMoney(ctx.netToPay), rightX - 2, y + 6.5, { align: "right" });
+    y += 14;
+  }
+
+  y = drawNotes(ctx, y + 2);
+
+  // Seller footer under a rule
+  strokeRgb(doc, [226, 232, 240]);
+  doc.setLineWidth(0.35);
+  doc.line(margin, y, 196, y);
+  y += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(sellerName, margin, y);
+  y += 4;
+  if (sellerAddress) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    textRgb(doc, [148, 163, 184]);
+    const addr = doc.splitTextToSize(sellerAddress, 182);
+    doc.text(addr, margin, y);
+    y += addr.length * 3.4;
+  }
+
+  finishLayout(ctx, y + 2);
+}
+
 export const PDF_LAYOUT_RENDERERS: Record<DocumentTemplateId, LayoutRenderer> = {
   classic: renderClassic,
   modern: renderModern,
@@ -2066,6 +2614,9 @@ export const PDF_LAYOUT_RENDERERS: Record<DocumentTemplateId, LayoutRenderer> = 
   interim: renderInterim,
   bluepro: renderBluepro,
   studio: renderStudio,
+  ledger: renderLedger,
+  folio: renderFolio,
+  ruby: renderRuby,
 };
 
 export function renderPdfLayout(templateId: DocumentTemplateId, ctx: PdfRenderContext) {

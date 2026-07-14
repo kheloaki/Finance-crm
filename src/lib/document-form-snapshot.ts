@@ -39,13 +39,10 @@ export function isDocumentFormDirty(
     const hasContent =
       !!current.clientId ||
       !!current.supplierId ||
-      current.reference.trim() !== "" ||
       current.notes.trim() !== "" ||
       current.discount > 0 ||
       current.deposit > 0 ||
-      current.lines.some(
-        (l) => l.designation.trim() !== "" || l.reference.trim() !== "",
-      );
+      current.lines.some((l) => l.designation.trim() !== "");
     return hasContent;
   }
   return snapshotDocumentForm(current) !== savedJson;

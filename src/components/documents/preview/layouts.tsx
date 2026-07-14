@@ -341,7 +341,6 @@ export function ExecutiveLayout({ ctx }: LayoutProps) {
                   <tr key={i} className="border-b border-neutral-100">
                     <td className="py-2">
                       <p className="font-medium">{line.designation}</p>
-                      <p className="text-[0.85em] text-slate-400">{line.reference}</p>
                     </td>
                     <td className="py-2 text-right tabular-nums">
                       {line.qty} {line.unit}
@@ -382,107 +381,82 @@ export function ExecutiveLayout({ ctx }: LayoutProps) {
 }
 
 /** 5 — Cadre double, grille comptable */
+/** 5 — Open invoice layout: logo / title, Bill To / meta, clean table, totals right */
 export function CorporateLayout({ ctx }: LayoutProps) {
   return (
     <EditableLayoutFrame ctx={ctx}>
-      <div
-        className="flex h-full flex-col border-4 border-double m-2 p-3"
-        style={{ borderColor: ctx.theme.primaryDark }}
-      >
-        <table className="mb-3 w-full border-collapse text-[0.8em]">
-          <tbody>
-            <tr>
-              <td className="w-1/2 border p-3 align-top" style={surfaceStyle(ctx)}>
-                <div className="mb-2 flex items-start gap-2">
-                  <LogoMark ctx={ctx} />
-                  {!ctx.logoUrl ? (
-                    <div>
-                      <p className="font-bold uppercase" style={{ color: ctx.theme.primaryDark }}>
-                        {ctx.sellerName}
-                      </p>
-                      {ctx.sellerActivity ? (
-                        <p style={accentMutedText(ctx)}>{ctx.sellerActivity}</p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-                {ctx.sellerAddress ? <p className="mt-1 text-slate-600">{ctx.sellerAddress}</p> : null}
-              </td>
-              <td className="w-1/2 border p-3 align-top" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                <p className="font-bold uppercase" style={{ color: ctx.theme.primaryDark }}>
-                  {ctx.label}
-                </p>
-                <p>
-                  N° document : <strong>{ctx.number}</strong>
-                </p>
-                <p>
-                  Date : <strong>{ctx.dateFormatted}</strong>
-                </p>
-                {ctx.dueDateFormatted ? (
-                  <p>
-                    Échéance : <strong>{ctx.dueDateFormatted}</strong>
-                  </p>
+      <div className="flex h-full flex-col px-5 py-5 sm:px-8 sm:py-7">
+        <header className="mb-7 flex items-start justify-between gap-6">
+          <div className="min-w-0 max-w-[58%]">
+            <LogoMark ctx={ctx} />
+            {!ctx.logoUrl ? (
+              <div className="mt-2">
+                <p className="text-[1.05em] font-bold text-[#0f172a]">{ctx.sellerName}</p>
+                {ctx.sellerActivity ? (
+                  <p className="text-[0.8em] text-slate-500">{ctx.sellerActivity}</p>
                 ) : null}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            ) : null}
+            {ctx.sellerAddress ? (
+              <p className="mt-2 whitespace-pre-line text-[0.8em] leading-relaxed text-slate-500">
+                {ctx.sellerAddress}
+              </p>
+            ) : null}
+          </div>
+          <h1 className="shrink-0 pt-1 text-right text-[1.75em] font-bold uppercase tracking-[0.04em] text-slate-700">
+            {ctx.label}
+          </h1>
+        </header>
 
-        <LayoutMetaBar ctx={ctx} className="mb-2" />
-
-        <LayoutCounterparty
-          ctx={ctx}
-          className="mb-2 border px-3 py-2"
-          style={surfaceStyle(ctx)}
-          labelClassName={cn("text-[0.7em] font-bold uppercase inline")}
-        />
+        <div className="mb-7 grid items-start gap-6 sm:grid-cols-2">
+          <LayoutCounterparty
+            ctx={ctx}
+            labelClassName="!mb-1.5 text-[0.8em] font-bold tracking-normal !normal-case text-slate-800"
+            showIce
+          />
+          <LayoutMetaBar ctx={ctx} variant="invoice" />
+        </div>
 
         <LayoutLines
           ctx={ctx}
-          className="mb-2 max-h-[40%] shrink-0 overflow-auto"
+          className="mb-2 px-0 py-0"
+          darkHead
           preview={
-            <LinesSpreadsheet ctx={ctx} stripeStyle={{ backgroundColor: ctx.theme.surface }} />
+            <div className="overflow-hidden border border-slate-200">
+              <LinesSpreadsheet
+                ctx={ctx}
+                headStyle={{ backgroundColor: "#111827", color: "#fff" }}
+                stripeStyle={{ backgroundColor: "#f8fafc" }}
+              />
+            </div>
           }
         />
 
         {!ctx.deliveryNote ? (
-          <>
-            <LayoutAdjustments ctx={ctx} className="mb-2" />
-            <table className="mb-2 w-full border-collapse text-[0.8em]">
-              <tbody>
-                <tr className="font-bold" style={{ backgroundColor: ctx.theme.surface }}>
-                  <td className="border p-2" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                    Total HT
-                  </td>
-                  <td className="border p-2 text-right tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                    {ctx.money(ctx.totalHt)}
-                  </td>
-                  <td className="border p-2" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                    TVA
-                  </td>
-                  <td className="border p-2 text-right tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                    {ctx.money(ctx.vatAmount)}
-                  </td>
-                </tr>
-                <tr style={primaryDarkBg(ctx)}>
-                  <td colSpan={3} className="border p-2 font-bold" style={{ borderColor: ctx.theme.primaryDark }}>
-                    NET À PAYER
-                  </td>
-                  <td
-                    className="border p-2 text-right text-[1.1em] font-black tabular-nums"
-                    style={{ borderColor: ctx.theme.primaryDark }}
-                  >
-                    {ctx.money(ctx.netToPay)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </>
+          <div className="mb-6 ml-auto w-full max-w-[240px] pt-2">
+            <LayoutAdjustments ctx={ctx} variant="stack" className="text-right" />
+            <dl className="space-y-1.5 text-[0.85em]">
+              <div className="flex items-baseline justify-between gap-6">
+                <dt className="text-slate-500">Total HT</dt>
+                <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.totalHt)}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-6">
+                <dt className="text-slate-500">TVA ({ctx.vatRate}%)</dt>
+                <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.vatAmount)}</dd>
+              </div>
+              <div className="mt-1 flex items-baseline justify-between gap-6 border-t border-slate-200 bg-slate-50 px-2.5 py-2">
+                <dt className="font-bold uppercase tracking-wide text-slate-800">Total</dt>
+                <dd className="text-[1.15em] font-bold tabular-nums text-[#0f172a]">
+                  {ctx.money(ctx.netToPay)}
+                </dd>
+              </div>
+            </dl>
+          </div>
         ) : null}
 
-        <LayoutNotes ctx={ctx} className="mb-2 border p-2 text-[0.85em]" style={surfaceStyle(ctx)} />
+        <LayoutNotes ctx={ctx} className="mb-4 border-0 px-0 py-0" />
         <LayoutSettingsBanner ctx={ctx} />
-        <footer className="mt-auto border-t pt-2 text-center" style={{ borderColor: ctx.theme.surfaceBorder, ...accentMutedText(ctx) }}>
+        <footer className="mt-auto border-t border-slate-100 pt-3 text-center text-slate-400">
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
@@ -633,7 +607,7 @@ export function WarmLayout({ ctx }: LayoutProps) {
                   </p>
                   <div className="mt-0.5 flex justify-between text-[0.8em]" style={accentMutedText(ctx)}>
                     <span>
-                      {line.reference} · {line.qty} {line.unit}
+                      {line.qty} {line.unit}
                     </span>
                     {!ctx.deliveryNote ? (
                       <span className="font-bold tabular-nums">{ctx.money(ctx.lineTtc(line))}</span>
@@ -917,9 +891,6 @@ export function RoyalLayout({ ctx }: LayoutProps) {
                     <tr key={i} style={i % 2 === 1 ? { backgroundColor: ctx.theme.surface } : undefined}>
                       <td className="border-t p-1.5" style={{ borderColor: ctx.theme.surfaceBorder }}>
                         <p className="font-medium">{line.designation}</p>
-                        <p className="text-[0.85em]" style={accentText(ctx)}>
-                          {line.reference}
-                        </p>
                       </td>
                       <td className="border-t p-1.5 text-right tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
                         {line.qty}
@@ -1407,6 +1378,362 @@ export function StudioLayout({ ctx }: LayoutProps) {
   );
 }
 
+/** 17 — Ledger : style facture épurée (logo / société / titre / bandeau) */
+export function LedgerLayout({ ctx }: LayoutProps) {
+  const headRgb = ctx.theme.primaryDark;
+  return (
+    <EditableLayoutFrame ctx={ctx}>
+      <div className="flex h-full flex-col px-6 py-6 sm:px-8 sm:py-8">
+        <header className="mb-6 flex items-start justify-between gap-6">
+          <LogoMark ctx={ctx} />
+          <div className="min-w-0 max-w-[55%] text-right">
+            <p className="text-[1.05em] font-bold text-[#0f172a]">{ctx.sellerName}</p>
+            {ctx.sellerActivity ? (
+              <p className="mt-0.5 text-[0.75em] text-slate-500">{ctx.sellerActivity}</p>
+            ) : null}
+            {ctx.sellerAddress ? (
+              <p className="mt-1.5 whitespace-pre-line text-[0.78em] leading-relaxed text-slate-500">
+                {ctx.sellerAddress}
+              </p>
+            ) : null}
+          </div>
+        </header>
+
+        <h1 className="mb-7 text-center text-[1.35em] font-medium uppercase tracking-[0.12em] text-slate-600">
+          {ctx.label}
+        </h1>
+
+        <div className="mb-5 grid items-start gap-6 sm:grid-cols-2">
+          <LayoutCounterparty
+            ctx={ctx}
+            labelClassName="!mb-1.5 text-[0.8em] font-normal tracking-normal !normal-case text-slate-600"
+            showIce
+          />
+          <div className="text-[0.85em] sm:text-right">
+            <p className="text-slate-500">N°</p>
+            <p className="mt-0.5 text-[1.05em] font-bold tabular-nums text-[#0f172a]">{ctx.number}</p>
+          </div>
+        </div>
+
+        <LayoutMetaBar ctx={ctx} variant="ledgerBanner" />
+
+        <LayoutLines
+          ctx={ctx}
+          className="mb-2 px-0 py-0"
+          darkHead
+          preview={
+            <div className="overflow-hidden">
+              <LinesSpreadsheet
+                ctx={ctx}
+                headStyle={{ backgroundColor: headRgb, color: "#fff" }}
+                stripeStyle={{ backgroundColor: "#fafafa" }}
+              />
+            </div>
+          }
+        />
+
+        {!ctx.deliveryNote ? (
+          <div className="mb-6 mt-2 grid items-start gap-6 sm:grid-cols-2">
+            <p className="pt-2 text-[0.85em] text-slate-500">Merci pour votre confiance.</p>
+            <div className="w-full max-w-[240px] sm:ml-auto">
+              <LayoutAdjustments ctx={ctx} variant="stack" className="text-right" />
+              <dl className="space-y-1.5 text-[0.85em]">
+                <div className="flex items-baseline justify-between gap-6">
+                  <dt className="text-slate-500">Sous-total</dt>
+                  <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.totalHt)}</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-6">
+                  <dt className="text-slate-500">TVA ({ctx.vatRate}%)</dt>
+                  <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.vatAmount)}</dd>
+                </div>
+                <div className="mt-1 flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
+                  <dt className="font-bold text-[#0f172a]">Total</dt>
+                  <dd className="text-[1.1em] font-bold tabular-nums text-[#0f172a]">
+                    {ctx.money(ctx.netToPay)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        ) : null}
+
+        <LayoutNotes ctx={ctx} className="mb-4 border-0 px-0 py-0" />
+        <LayoutSettingsBanner ctx={ctx} />
+        <footer className="mt-auto border-t border-slate-100 pt-3 text-center text-slate-400">
+          <FooterLegal ctx={ctx} />
+        </footer>
+      </div>
+    </EditableLayoutFrame>
+  );
+}
+
+/** 18 — Folio : en-tête coloré, solde dû, grille méta, totaux encadrés */
+export function FolioLayout({ ctx }: LayoutProps) {
+  const products = renderProductLines(ctx);
+  return (
+    <EditableLayoutFrame ctx={ctx}>
+      <div className="flex h-full flex-col">
+        <header
+          className="flex shrink-0 items-start justify-between gap-4 px-6 py-5 sm:px-8"
+          style={{ backgroundColor: ctx.theme.primary, color: ctx.theme.onPrimary }}
+        >
+          <div className="min-w-0 shrink-0">
+            {ctx.logoUrl ? (
+              <LogoMark ctx={ctx} className="!h-14 !max-w-[120px]" />
+            ) : (
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[0.8em] font-bold text-slate-800">
+                {ctx.sellerName.slice(0, 1).toUpperCase()}
+              </div>
+            )}
+          </div>
+          <h1 className="flex-1 self-center text-center text-[1.6em] font-bold uppercase tracking-[0.14em]">
+            {ctx.label}
+          </h1>
+          <div className="min-w-0 max-w-[38%] text-right text-[0.78em] leading-relaxed opacity-95">
+            <p className="text-[1.05em] font-bold">{ctx.sellerName}</p>
+            {ctx.sellerAddress ? (
+              <p className="mt-1 whitespace-pre-line opacity-90">{ctx.sellerAddress}</p>
+            ) : null}
+          </div>
+        </header>
+
+        {!ctx.deliveryNote ? (
+          <div className="flex justify-end bg-[#f3f4f6] px-6 py-2.5 sm:px-8">
+            <p className="text-[0.85em] font-bold uppercase tracking-wide text-[#0f172a]">
+              Solde dû{" "}
+              <span className="ml-3 tabular-nums">{ctx.money(ctx.netToPay)}</span>
+            </p>
+          </div>
+        ) : null}
+
+        <div className="flex flex-1 flex-col px-6 py-5 sm:px-8">
+          <div className="mb-6 grid items-start gap-6 sm:grid-cols-2">
+            <LayoutCounterparty
+              ctx={ctx}
+              labelClassName="!mb-1 hidden"
+              showIce
+            />
+            <LayoutMetaBar ctx={ctx} variant="folio" />
+          </div>
+
+          <LayoutLines
+            ctx={ctx}
+            className="mb-2 px-0 py-0"
+            preview={
+              <table className="w-full border-collapse text-[0.82em]">
+                <thead>
+                  <tr className="border-b border-slate-300 text-[0.7em] uppercase tracking-wide text-slate-400">
+                    <th className="w-8 py-2 text-left font-semibold">#</th>
+                    <th className="py-2 text-left font-semibold">Article & description</th>
+                    <th className="w-16 py-2 text-right font-semibold">Qté</th>
+                    {!ctx.deliveryNote ? (
+                      <th className="w-24 py-2 text-right font-semibold">Montant</th>
+                    ) : null}
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center italic text-slate-400">
+                        Aucune ligne
+                      </td>
+                    </tr>
+                  ) : (
+                    products.map((line, i) => (
+                      <tr key={i} className="border-b border-slate-100 align-top">
+                        <td className="py-3 tabular-nums text-slate-400">{i + 1}</td>
+                        <td className="py-3 pr-3">
+                          <p className="font-semibold text-[#0f172a]">{line.designation}</p>
+                          {!ctx.deliveryNote ? (
+                            <p className="mt-1 text-[0.9em] tabular-nums text-slate-400">
+                              {line.qty} × {ctx.money(line.unitPriceHt)}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="py-3 text-right tabular-nums text-slate-600">{line.qty}</td>
+                        {!ctx.deliveryNote ? (
+                          <td className="py-3 text-right font-medium tabular-nums text-[#0f172a]">
+                            {ctx.money(ctx.lineTtc(line))}
+                          </td>
+                        ) : null}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            }
+          />
+
+          {!ctx.deliveryNote ? (
+            <div className="mb-6 mt-4 grid items-start gap-6 sm:grid-cols-2">
+              <p className="pt-2 text-[0.85em] text-slate-400">Merci pour votre confiance.</p>
+              <div className="w-full max-w-[260px] space-y-3 sm:ml-auto">
+                <LayoutAdjustments ctx={ctx} variant="stack" className="text-right" />
+                <dl className="space-y-2 rounded-sm bg-[#f3f4f6] px-4 py-3 text-[0.85em]">
+                  <div className="flex items-baseline justify-between gap-6">
+                    <dt className="text-slate-500">Sous-total</dt>
+                    <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.totalHt)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-6">
+                    <dt className="text-slate-500">TVA ({ctx.vatRate}%)</dt>
+                    <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.vatAmount)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
+                    <dt className="font-bold text-[#0f172a]">Total</dt>
+                    <dd className="font-bold tabular-nums text-[#0f172a]">{ctx.money(ctx.netToPay)}</dd>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-6">
+                    <dt className="font-bold text-[#0f172a]">Solde dû</dt>
+                    <dd className="font-bold tabular-nums text-[#0f172a]">{ctx.money(ctx.netToPay)}</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          ) : null}
+
+          <LayoutNotes ctx={ctx} className="mb-4 border-0 px-0 py-0" />
+          <LayoutSettingsBanner ctx={ctx} />
+          <footer className="mt-auto border-t border-slate-100 pt-3 text-center text-slate-400">
+            <FooterLegal ctx={ctx} />
+          </footer>
+        </div>
+      </div>
+    </EditableLayoutFrame>
+  );
+}
+
+/** 19 — Ruby : accent rouge, client / titre, encart solde, barre total */
+export function RubyLayout({ ctx }: LayoutProps) {
+  const products = renderProductLines(ctx);
+  const accent = ctx.theme.primary;
+  return (
+    <EditableLayoutFrame ctx={ctx}>
+      <div className="flex h-full flex-col px-6 py-6 sm:px-8 sm:py-7">
+        <header className="mb-6 flex items-start justify-between gap-6">
+          <LayoutCounterparty
+            ctx={ctx}
+            className="min-w-0 max-w-[55%]"
+            labelClassName="!mb-1 !text-[0.78em] font-medium tracking-normal !normal-case !text-[color:var(--doc-primary)]"
+            showIce
+          />
+          <div className="shrink-0 text-right">
+            <h1
+              className="text-[1.85em] font-bold uppercase tracking-[0.04em] leading-none"
+              style={{ color: accent }}
+            >
+              {ctx.label}
+            </h1>
+            <p className="mt-1.5 text-[0.8em] tabular-nums text-slate-400">{ctx.number}</p>
+          </div>
+        </header>
+
+        <LayoutMetaBar ctx={ctx} variant="ruby" className="mb-7" />
+
+        <LayoutLines
+          ctx={ctx}
+          className="mb-2 px-0 py-0"
+          preview={
+            <table className="w-full border-collapse text-[0.82em]">
+              <thead>
+                <tr
+                  className="border-b-2 text-[0.72em] font-semibold tracking-wide"
+                  style={{ borderColor: accent, color: accent }}
+                >
+                  <th className="w-8 py-2 text-left">#</th>
+                  <th className="py-2 text-left">Article & description</th>
+                  <th className="w-14 py-2 text-right">Qté</th>
+                  {!ctx.deliveryNote ? (
+                    <>
+                      <th className="w-20 py-2 text-right">PU HT</th>
+                      <th className="w-24 py-2 text-right">Montant</th>
+                    </>
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody>
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center italic text-slate-400">
+                      Aucune ligne
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((line, i) => (
+                    <tr key={i} className="border-b border-slate-100 align-top">
+                      <td className="py-3 tabular-nums text-slate-400">{i + 1}</td>
+                      <td className="py-3 pr-3">
+                        <p className="font-semibold text-slate-800">{line.designation}</p>
+                        {line.unit ? (
+                          <p className="mt-0.5 text-[0.9em] text-slate-400">{line.unit}</p>
+                        ) : null}
+                      </td>
+                      <td className="py-3 text-right tabular-nums text-slate-700">{line.qty}</td>
+                      {!ctx.deliveryNote ? (
+                        <>
+                          <td className="py-3 text-right tabular-nums text-slate-700">
+                            {ctx.money(line.unitPriceHt)}
+                          </td>
+                          <td className="py-3 text-right font-medium tabular-nums text-slate-800">
+                            {ctx.money(ctx.lineTtc(line))}
+                          </td>
+                        </>
+                      ) : null}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          }
+        />
+
+        {!ctx.deliveryNote ? (
+          <div className="mb-6 mt-4 grid items-end gap-6 sm:grid-cols-2">
+            <p className="text-[0.85em] text-slate-400">Merci pour votre confiance.</p>
+            <div className="w-full max-w-[260px] sm:ml-auto">
+              <LayoutAdjustments ctx={ctx} variant="stack" className="text-right" />
+              <dl className="space-y-1.5 text-[0.85em]">
+                <div className="flex items-baseline justify-between gap-6">
+                  <dt style={{ color: accent }}>Sous-total</dt>
+                  <dd className="tabular-nums text-slate-800">{ctx.money(ctx.totalHt)}</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-6">
+                  <dt style={{ color: accent }}>TVA ({ctx.vatRate}%)</dt>
+                  <dd className="tabular-nums text-slate-800">{ctx.money(ctx.vatAmount)}</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-6">
+                  <dt className="font-semibold" style={{ color: accent }}>
+                    Total
+                  </dt>
+                  <dd className="font-bold tabular-nums text-slate-800">{ctx.money(ctx.netToPay)}</dd>
+                </div>
+              </dl>
+              <div
+                className="mt-3 flex items-center justify-between gap-4 px-3 py-2.5 text-white"
+                style={{ backgroundColor: accent }}
+              >
+                <span className="text-[0.85em] font-semibold">Solde dû</span>
+                <span className="text-[1.05em] font-bold tabular-nums">{ctx.money(ctx.netToPay)}</span>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <LayoutNotes ctx={ctx} className="mb-4 border-0 px-0 py-0" />
+        <LayoutSettingsBanner ctx={ctx} />
+        <footer className="mt-auto border-t border-slate-200 pt-3">
+          <p className="text-[0.9em] font-bold text-slate-900">{ctx.sellerName}</p>
+          {ctx.sellerAddress ? (
+            <p className="mt-0.5 whitespace-pre-line text-[0.75em] text-slate-400">{ctx.sellerAddress}</p>
+          ) : null}
+          <div className="mt-2 text-center text-slate-400">
+            <FooterLegal ctx={ctx} />
+          </div>
+        </footer>
+      </div>
+    </EditableLayoutFrame>
+  );
+}
+
 export const LAYOUT_REGISTRY = {
   classic: ClassicLayout,
   modern: ModernLayout,
@@ -1424,4 +1751,7 @@ export const LAYOUT_REGISTRY = {
   interim: InterimLayout,
   bluepro: BlueproLayout,
   studio: StudioLayout,
+  ledger: LedgerLayout,
+  folio: FolioLayout,
+  ruby: RubyLayout,
 } as const;
