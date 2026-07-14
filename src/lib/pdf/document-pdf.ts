@@ -4,11 +4,13 @@ import {
   buildDocumentExportModel,
   type DocumentExportInput,
 } from "@/lib/document-export";
+import { trimImageDataUrl } from "@/lib/image-trim";
 import { renderPdfLayout, type PdfRenderContext } from "@/lib/pdf/document-pdf-layouts";
 import { jsPDF } from "jspdf";
 
 async function loadImageDataUrl(
   url: string,
+  opts?: { trim?: boolean },
 ): Promise<{ dataUrl: string; aspect?: number } | null> {
   try {
     const res = await fetch(url);
@@ -21,6 +23,11 @@ async function loadImageDataUrl(
       reader.readAsDataURL(blob);
     });
     if (!dataUrl) return null;
+
+    if (opts?.trim) {
+      const trimmed = await trimImageDataUrl(dataUrl);
+      if (trimmed) return trimmed;
+    }
 
     const aspect = await new Promise<number | undefined>((resolve) => {
       const img = new Image();
@@ -38,7 +45,9 @@ async function loadImageDataUrl(
 export async function exportDocumentPdf(input: DocumentExportInput) {
   const model = buildDocumentExportModel(input);
   const company = resolveDocumentCompanySettings(model.settings);
-  const logoLoaded = company.logoUrl ? await loadImageDataUrl(company.logoUrl) : null;
+  const logoLoaded = company.logoUrl
+    ? await loadImageDataUrl(company.logoUrl, { trim: true })
+    : null;
   const logoDataUrl = logoLoaded?.dataUrl ?? null;
   const logoAspect = logoLoaded?.aspect;
   const cachetLoaded =

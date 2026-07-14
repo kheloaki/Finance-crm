@@ -145,8 +145,8 @@ function textAccent(ctx: PdfRenderContext) {
   textRgb(ctx.doc, hexToRgb(ctx.theme.accent));
 }
 
-function drawLogo(ctx: PdfRenderContext, x: number, y: number, maxW = 28, maxH = 18) {
-  if (!ctx.logoDataUrl) return;
+function drawLogo(ctx: PdfRenderContext, x: number, y: number, maxW = 48, maxH = 30): { w: number; h: number } {
+  if (!ctx.logoDataUrl) return { w: 0, h: 0 };
   let w = maxW;
   let h = maxH;
   if (ctx.logoAspect && ctx.logoAspect > 0) {
@@ -164,6 +164,7 @@ function drawLogo(ctx: PdfRenderContext, x: number, y: number, maxW = 28, maxH =
   } catch {
     // skip invalid image
   }
+  return { w, h };
 }
 
 function drawCachet(ctx: PdfRenderContext, contentEndY?: number) {
@@ -738,7 +739,7 @@ function renderClassic(ctx: PdfRenderContext) {
   doc.rect(0, 0, 210, 50, "F");
 
   let y = 10;
-  drawLogo(ctx, margin, y, 32, 20);
+  drawLogo(ctx, margin, y, 42, 28);
   const boxW = 92;
   const boxH = sellerActivity ? 16 : 11;
   strokeRgb(doc, [226, 232, 240]);
@@ -800,17 +801,17 @@ function renderModern(ctx: PdfRenderContext) {
 
   let sellerTextX = margin;
   if (ctx.logoDataUrl) {
-    drawLogo(ctx, margin, 8, 14, 10);
-    sellerTextX = margin + 17;
+    const logo = drawLogo(ctx, margin, 6, 28, 22);
+    sellerTextX = margin + logo.w + 3;
   } else if (sellerName.trim()) {
     const initials = sellerName.slice(0, 2).toUpperCase();
     fillRgb(doc, blendRgb(theme.primaryRgb, [255, 255, 255], 0.22));
-    doc.roundedRect(margin, 8, 11, 11, 2, 2, "F");
+    doc.roundedRect(margin, 8, 14, 14, 2, 2, "F");
     textOnPrimary(ctx);
-    doc.setFontSize(6.5);
+    doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
-    doc.text(initials, margin + 5.5, 15, { align: "center" });
-    sellerTextX = margin + 14;
+    doc.text(initials, margin + 7, 17, { align: "center" });
+    sellerTextX = margin + 18;
   }
 
   if (sellerName.trim()) {
@@ -886,11 +887,12 @@ function renderModern(ctx: PdfRenderContext) {
 function renderMinimal(ctx: PdfRenderContext) {
   const { doc, margin, label, number, sellerName, sellerActivity, theme } = ctx;
   let y = margin;
-  drawLogo(ctx, margin, y - 1);
+  const logo = drawLogo(ctx, margin, y - 1, 36, 24);
+  const nameX = margin + (logo.w ? logo.w + 3 : 0);
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   textRgb(doc, [17, 24, 39]);
-  doc.text(sellerName.toUpperCase(), margin + (ctx.logoDataUrl ? 16 : 0), y);
+  doc.text(sellerName.toUpperCase(), nameX, y);
   doc.setFontSize(8);
   doc.text(label, 196, y, { align: "right" });
   doc.setFont("helvetica", "bold");
@@ -922,8 +924,8 @@ function renderMinimal(ctx: PdfRenderContext) {
 function renderExecutive(ctx: PdfRenderContext) {
   const { doc, margin, label, number, sellerName, theme } = ctx;
   fillPrimaryDark(ctx);
-  doc.rect(0, 0, 210, 38, "F");
-  drawLogo(ctx, margin, 10, 14, 10);
+  doc.rect(0, 0, 210, 42, "F");
+  const logo = drawLogo(ctx, margin, 8, 28, 22);
   textOnPrimary(ctx);
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
@@ -935,9 +937,9 @@ function renderExecutive(ctx: PdfRenderContext) {
   doc.text(`Réf. ${number}`, 196, 24, { align: "right" });
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text(sellerName, margin + (ctx.logoDataUrl ? 16 : 0), 18);
+  doc.text(sellerName, margin + (logo.w ? logo.w + 3 : 0), 18);
 
-  let y = 44;
+  let y = 48;
   strokeRgb(doc, hexToRgb(theme.surfaceBorder));
   doc.roundedRect(margin, y, 88, 24, 2, 2);
   fillMuted(ctx);
@@ -973,26 +975,59 @@ function renderCorporate(ctx: PdfRenderContext) {
   doc.setLineWidth(0.3);
   doc.rect(10, 10, 190, 277);
 
-  let y = 16;
+  let y = 14;
+  const hasLogo = !!ctx.logoDataUrl;
+  const headerH = hasLogo ? 56 : 42;
+  const leftW = 98;
+  const rightW = 82;
   strokeRgb(doc, hexToRgb(theme.surfaceBorder));
-  doc.rect(margin, y, 88, 24);
-  doc.rect(margin + 90, y, 92, 24);
-  drawLogo(ctx, margin + 2, y + 2, 10, 8);
-  doc.setFontSize(9);
+  doc.rect(margin, y, leftW, headerH);
+  doc.rect(margin + leftW, y, rightW, headerH);
+
+  // Logo already includes company name — do not repeat it beside the logo.
+  const logo = drawLogo(ctx, margin + 4, y + 4, hasLogo ? 56 : 36, hasLogo ? 36 : 28);
+
+  if (!hasLogo) {
+    const textX = margin + 3;
+    const textMaxW = leftW - 6;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    textPrimaryDark(ctx);
+    const nameLines = doc.splitTextToSize(sellerName.toUpperCase(), textMaxW);
+    doc.text(nameLines, textX, y + 12);
+    let ty = y + 12 + nameLines.length * 5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    if (sellerActivity) {
+      const actLines = doc.splitTextToSize(sellerActivity, textMaxW);
+      doc.text(actLines, textX, ty);
+      ty += actLines.length * 4;
+    }
+    if (sellerAddress) {
+      const addrLines = doc.splitTextToSize(sellerAddress, textMaxW);
+      textRgb(doc, [100, 116, 139]);
+      doc.text(addrLines, textX, ty);
+    }
+  } else if (sellerAddress) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    textRgb(doc, [100, 116, 139]);
+    const addrLines = doc.splitTextToSize(sellerAddress, leftW - 8);
+    doc.text(addrLines, margin + 4, y + Math.max(logo.h + 8, 42));
+  }
+
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
   textPrimaryDark(ctx);
-  doc.text(sellerName.toUpperCase(), margin + 14, y + 6);
+  doc.text(label.toUpperCase(), margin + leftW + 4, y + 16);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  if (sellerActivity) doc.text(sellerActivity, margin + 2, y + 11);
-  if (sellerAddress) doc.text(sellerAddress.slice(0, 40), margin + 2, y + 16);
-  doc.setFont("helvetica", "bold");
-  doc.text(label.toUpperCase(), margin + 92, y + 6);
-  doc.setFont("helvetica", "normal");
-  doc.text(`N° ${number}`, margin + 92, y + 12);
-  doc.text(`Date : ${ctx.dateFormatted}`, margin + 92, y + 17);
-  if (ctx.dueDateFormatted) doc.text(`Éch. : ${ctx.dueDateFormatted}`, margin + 92, y + 22);
-  y += 30;
+  doc.setFontSize(9);
+  doc.text(`N° ${number}`, margin + leftW + 4, y + 26);
+  doc.text(`Date : ${ctx.dateFormatted}`, margin + leftW + 4, y + 34);
+  if (ctx.dueDateFormatted) {
+    doc.text(`Éch. : ${ctx.dueDateFormatted}`, margin + leftW + 4, y + 42);
+  }
+  y += headerH + 6;
 
   fillSurface(ctx);
   doc.rect(margin, y, 182, 10, "F");
@@ -1018,24 +1053,24 @@ function renderFresh(ctx: PdfRenderContext) {
   let y = margin;
   doc.setFillColor(255, 255, 255);
   strokeRgb(doc, hexToRgb(theme.surfaceBorder));
-  doc.roundedRect(margin, y, 182, 16, 4, 4, "FD");
-  drawLogo(ctx, margin + 3, y + 2, 12, 10);
+  doc.roundedRect(margin, y, 182, 24, 4, 4, "FD");
+  const logo = drawLogo(ctx, margin + 3, y + 3, 24, 18);
   textPrimaryDark(ctx);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(sellerName, margin + 18, y + 7);
+  doc.text(sellerName, margin + (logo.w ? logo.w + 6 : 3), y + 10);
   if (sellerActivity) {
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     textRgb(doc, theme.primaryRgb);
-    doc.text(sellerActivity, margin + 18, y + 11);
+    doc.text(sellerActivity, margin + (logo.w ? logo.w + 6 : 3), y + 15);
   }
   fillSurface(ctx);
-  doc.roundedRect(150, y + 3, 40, 10, 5, 5, "F");
+  doc.roundedRect(150, y + 7, 40, 10, 5, 5, "F");
   textPrimaryDark(ctx);
   doc.setFontSize(7);
-  doc.text(label, 170, y + 9.5, { align: "center" });
-  y += 20;
+  doc.text(label, 170, y + 13.5, { align: "center" });
+  y += 28;
 
   strokeRgb(doc, hexToRgb(theme.surfaceBorder));
   doc.roundedRect(margin, y, 88, 16, 3, 3);
@@ -1064,11 +1099,11 @@ function renderWarm(ctx: PdfRenderContext) {
   fillMuted(ctx);
   doc.rect(0, 0, 210, 297, "F");
   let y = margin;
-  drawLogo(ctx, margin, y - 1);
+  const logo = drawLogo(ctx, margin, y - 1, 36, 24);
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   textPrimaryDark(ctx);
-  doc.text(sellerName, margin + 16, y);
+  doc.text(sellerName, margin + (logo.w ? logo.w + 3 : 0), y);
   y += sellerActivity ? 6 : 4;
   if (sellerActivity) {
     doc.setFont("helvetica", "italic");
@@ -1522,15 +1557,15 @@ function renderOcean(ctx: PdfRenderContext) {
   doc.text(label.toUpperCase(), sidebarW / 2, 140, { angle: 90, align: "center" });
 
   let y = margin;
-  drawLogo(ctx, left, y - 1);
+  const logo = drawLogo(ctx, left, y - 1, 36, 24);
   textPrimaryDark(ctx);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text(sellerName, left + 16, y + 2);
+  doc.text(sellerName, left + (logo.w ? logo.w + 3 : 0), y + 2);
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   textRgb(doc, ctx.theme.primaryRgb);
-  doc.text(ctx.dateFormatted, left + 16, y + 8);
+  doc.text(ctx.dateFormatted, left + (logo.w ? logo.w + 3 : 0), y + 8);
 
   fillPrimary(ctx);
   doc.circle(188, y + 4, 9, "F");
@@ -1562,11 +1597,11 @@ function renderSlate(ctx: PdfRenderContext) {
   const { doc, margin, label, counterpartyName, counterpartyAddress, counterpartyCity, vatRate, lines } =
     ctx;
   let y = margin;
-  drawLogo(ctx, margin, y - 1);
+  const logo = drawLogo(ctx, margin, y - 1, 36, 24);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   textPrimaryDark(ctx);
-  doc.text(ctx.sellerName, margin + 16, y);
+  doc.text(ctx.sellerName, margin + (logo.w ? logo.w + 3 : 0), y);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.text(`${ctx.dateFormatted}\nRéf. ${ctx.number}`, 196, y, { align: "right" });
@@ -1638,12 +1673,12 @@ function renderRoyal(ctx: PdfRenderContext) {
   doc.text("◆", frameX + frameW - 2, frameY + frameH - 2, { align: "right" });
 
   let y = 20;
-  drawLogo(ctx, 105 - 6, y - 2, 12, 12);
+  drawLogo(ctx, 105 - 12, y - 2, 24, 24);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   textPrimaryDark(ctx);
-  doc.text(sellerName.toUpperCase(), 105, y + 8, { align: "center" });
-  y += sellerActivity ? 14 : 10;
+  doc.text(sellerName.toUpperCase(), 105, y + 14, { align: "center" });
+  y += sellerActivity ? 20 : 16;
   if (sellerActivity) {
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
@@ -1703,30 +1738,30 @@ function renderRoyal(ctx: PdfRenderContext) {
 function renderGeometric(ctx: PdfRenderContext) {
   const { doc, margin, label, number, sellerName, sellerActivity } = ctx;
   fillRgb(doc, [245, 245, 245]);
-  doc.rect(0, 0, 210, 36, "F");
+  doc.rect(0, 0, 210, 44, "F");
   fillRgb(doc, [212, 212, 212]);
   doc.triangle(196, 0, 168, 0, 196, 28, "F");
   fillRgb(doc, [163, 163, 163]);
   doc.triangle(180, 0, 158, 0, 180, 20, "F");
 
   let y = margin;
-  drawLogo(ctx, margin, y);
+  const logo = drawLogo(ctx, margin, y, 40, 28);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   textRgb(doc, [17, 24, 39]);
-  doc.text(sellerName.toUpperCase(), margin + 16, y + 2);
+  doc.text(sellerName.toUpperCase(), margin + (logo.w ? logo.w + 3 : 0), y + 6);
   if (sellerActivity) {
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     textRgb(doc, [115, 115, 115]);
-    doc.text(sellerActivity, margin + 16, y + 7);
+    doc.text(sellerActivity, margin + (logo.w ? logo.w + 3 : 0), y + 12);
   }
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.text(label.toUpperCase(), 196, y, { align: "right" });
   doc.setFontSize(8);
   doc.text(`#${number}`, 196, y + 6, { align: "right" });
-  y += 14;
+  y += Math.max(logo.h || 0, 14) + 6;
 
   const colW = 88;
   strokeRgb(doc, [229, 231, 235]);
@@ -1791,10 +1826,10 @@ function renderGradient(ctx: PdfRenderContext) {
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.text(`#${number} · ${ctx.dateFormatted}`, margin, 20);
-  drawLogo(ctx, 176, 8, 12, 10);
+  drawLogo(ctx, 168, 6, 28, 22);
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
-  doc.text(sellerName, 196, 22, { align: "right" });
+  doc.text(sellerName, 196, 30, { align: "right" });
 
   let y = 32;
   doc.setFillColor(255, 255, 255);
@@ -1832,7 +1867,7 @@ function renderInterim(ctx: PdfRenderContext) {
   doc.text(label, 105, y, { align: "center" });
   y += 10;
 
-  drawLogo(ctx, 176, y - 2, 12, 10);
+  drawLogo(ctx, 168, y - 2, 28, 22);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
   textRgb(doc, [17, 24, 39]);
@@ -1882,21 +1917,24 @@ function renderInterim(ctx: PdfRenderContext) {
 function renderBluepro(ctx: PdfRenderContext) {
   const { doc, margin, label, number, sellerName, sellerAddress } = ctx;
   let y = margin;
+  let nameX = margin;
   if (ctx.logoDataUrl) {
-    drawLogo(ctx, margin, y, 10, 8);
+    const logo = drawLogo(ctx, margin, y, 28, 20);
+    nameX = margin + logo.w + 3;
   } else {
     fillPrimaryDark(ctx);
-    doc.roundedRect(margin, y, 8, 8, 1, 1, "F");
+    doc.roundedRect(margin, y, 12, 12, 1, 1, "F");
+    nameX = margin + 15;
   }
   textPrimaryDark(ctx);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(sellerName, margin + 11, y + 3);
+  doc.text(sellerName, nameX, y + 5);
   if (sellerAddress) {
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     textRgb(doc, [107, 114, 128]);
-    doc.text(sellerAddress.slice(0, 45), margin + 11, y + 7);
+    doc.text(sellerAddress.slice(0, 45), nameX, y + 10);
   }
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
@@ -1907,7 +1945,7 @@ function renderBluepro(ctx: PdfRenderContext) {
   textRgb(doc, [17, 24, 39]);
   doc.text(`Date : ${ctx.dateFormatted}`, 196, y + 6, { align: "right" });
   doc.text(`N° : ${number}`, 196, y + 11, { align: "right" });
-  y += 16;
+  y += 24;
 
   const halfW = 91;
   fillPrimaryDark(ctx);
@@ -1951,24 +1989,27 @@ function renderBluepro(ctx: PdfRenderContext) {
 function renderStudio(ctx: PdfRenderContext) {
   const { doc, margin, label, number, sellerName, theme } = ctx;
   let y = margin;
+  let nameX = margin;
   if (ctx.logoDataUrl) {
-    drawLogo(ctx, margin, y, 14, 8);
+    const logo = drawLogo(ctx, margin, y, 32, 22);
+    nameX = margin + logo.w + 3;
   } else if (sellerName.trim()) {
     fillPrimary(ctx);
-    doc.roundedRect(margin, y, 14, 8, 1, 1, "F");
+    doc.roundedRect(margin, y, 22, 14, 1, 1, "F");
     const initials = sellerName.slice(0, 2).toUpperCase();
     textOnPrimary(ctx);
-    doc.setFontSize(6);
+    doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
-    doc.text(initials, margin + 7, y + 5.5, { align: "center" });
+    doc.text(initials, margin + 11, y + 9, { align: "center" });
+    nameX = margin + 26;
   }
   if (sellerName.trim()) {
     doc.setFontSize(10);
     textRgb(doc, [17, 24, 39]);
     doc.setFont("helvetica", "bold");
-    doc.text(sellerName.toUpperCase(), margin + 17, y + 5);
+    doc.text(sellerName.toUpperCase(), nameX, y + 8);
   }
-  y += 12;
+  y += 26;
 
   strokeRgb(doc, theme.primaryRgb);
   doc.setLineWidth(0.8);

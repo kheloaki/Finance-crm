@@ -4,6 +4,7 @@ import { themeCssVars } from "@/lib/document-theme";
 import { cn } from "@/lib/utils";
 import { buildSellerFooterLines } from "@/lib/seller-footer";
 import { DocumentCachetZone } from "./CachetImage";
+import { TrimmedLogoImage } from "./TrimmedLogoImage";
 import type { PreviewContext } from "./types";
 
 /** Line items: natural height, scroll when many rows — no empty stretch. */
@@ -233,11 +234,9 @@ export function LinesSpreadsheet({
 export function LogoMark({ ctx, className = "", style }: { ctx: PreviewContext; className?: string; style?: CSSProperties }) {
   if (ctx.logoUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <TrimmedLogoImage
         src={ctx.logoUrl}
-        alt=""
-        className={cn("h-12 w-auto max-w-[110px] shrink-0 object-contain", className)}
+        className={cn("h-24 w-auto max-w-[220px] shrink-0 object-contain", className)}
         style={style}
       />
     );
@@ -246,7 +245,7 @@ export function LogoMark({ ctx, className = "", style }: { ctx: PreviewContext; 
   return (
     <div
       className={cn(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[9px] font-bold",
+        "flex h-14 w-14 shrink-0 items-center justify-center rounded-md text-xs font-bold",
         className,
       )}
       style={{ backgroundColor: ctx.theme.primary, color: ctx.theme.onPrimary, ...style }}

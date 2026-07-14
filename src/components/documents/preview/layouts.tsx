@@ -393,13 +393,19 @@ export function CorporateLayout({ ctx }: LayoutProps) {
           <tbody>
             <tr>
               <td className="w-1/2 border p-3 align-top" style={surfaceStyle(ctx)}>
-                <div className="mb-2 flex items-center gap-2">
+                <div className="mb-2 flex items-start gap-2">
                   <LogoMark ctx={ctx} />
-                  <p className="font-bold uppercase" style={{ color: ctx.theme.primaryDark }}>
-                    {ctx.sellerName}
-                  </p>
+                  {!ctx.logoUrl ? (
+                    <div>
+                      <p className="font-bold uppercase" style={{ color: ctx.theme.primaryDark }}>
+                        {ctx.sellerName}
+                      </p>
+                      {ctx.sellerActivity ? (
+                        <p style={accentMutedText(ctx)}>{ctx.sellerActivity}</p>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
-                {ctx.sellerActivity ? <p style={accentMutedText(ctx)}>{ctx.sellerActivity}</p> : null}
                 {ctx.sellerAddress ? <p className="mt-1 text-slate-600">{ctx.sellerAddress}</p> : null}
               </td>
               <td className="w-1/2 border p-3 align-top" style={{ borderColor: ctx.theme.surfaceBorder }}>
@@ -1344,7 +1350,7 @@ export function StudioLayout({ ctx }: LayoutProps) {
   return (
     <EditableLayoutFrame ctx={ctx}>
       <header className="flex shrink-0 items-center gap-2 px-[5%] pt-3">
-        <LogoMark ctx={ctx} className="max-h-8 max-w-[72px] rounded object-contain" />
+        <LogoMark ctx={ctx} className="rounded object-contain" />
         <p className="text-[1em] font-black uppercase">{ctx.sellerName}</p>
       </header>
 
