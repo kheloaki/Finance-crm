@@ -22,6 +22,7 @@ export function HtTtcField({
   showLabels = true,
   hint,
   fieldClassName,
+  htOnly = false,
 }: {
   valueHt: number;
   vatRate: number;
@@ -33,6 +34,8 @@ export function HtTtcField({
   showLabels?: boolean;
   hint?: string;
   fieldClassName?: string;
+  /** Show HT input only (no TTC column) */
+  htOnly?: boolean;
 }) {
   const ttc = htToTtc(valueHt, vatRate);
   const [htDraft, setHtDraft] = useState("");
@@ -62,6 +65,38 @@ export function HtTtcField({
     fieldClassName ?? (compact ? inputDenseClass : inputClass),
     "tabular-nums text-right",
   );
+
+  if (htOnly) {
+    return (
+      <div className={className}>
+        {showLabels && !compact ? (
+          <label className={cn(labelClass, "text-[10px]")}>HT</label>
+        ) : null}
+        <input
+          type="text"
+          inputMode="decimal"
+          disabled={disabled}
+          className={cn(fieldClass, showLabels && !compact && "mt-0.5", "w-full")}
+          value={editing === "ht" ? htDraft : valueHt === 0 ? "" : String(valueHt)}
+          onFocus={() => {
+            setEditing("ht");
+            setHtDraft(valueHt === 0 ? "" : String(valueHt));
+          }}
+          onBlur={() => {
+            commitHt(htDraft);
+            setEditing(null);
+          }}
+          onChange={(e) => {
+            setHtDraft(e.target.value);
+            const n = parseAmount(e.target.value);
+            if (n != null) onChangeHt(n);
+          }}
+          placeholder="HT"
+          title="Montant HT"
+        />
+      </div>
+    );
+  }
 
   return (
     <div

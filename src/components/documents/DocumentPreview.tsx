@@ -27,6 +27,7 @@ type Props = {
   settings?: CompanySettings | null;
   templateId?: DocumentTemplateId;
   showCachet?: boolean;
+  amountDisplay?: import("@/lib/documents").AmountDisplay;
   /** Sample company data for empty fields — settings / design previews only. */
   previewMode?: boolean;
   scale?: "fit" | "full";

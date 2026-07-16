@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Copy, MoreHorizontal, Package, Plus, StickyNote, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { HtTtcField } from "@/components/ui/ht-ttc-field";
 import { CatalogCreateRow } from "@/components/documents/CounterpartyDatasheet";
 import { DataSheet, DATA_SHEET_WIDTH_WIDE } from "@/components/datasheet/DataSheet";
 import { docFieldDenseClass, inputDenseClass, sectionTitleClass, tableHeadClass } from "@/lib/design";
 import type { LineItem } from "@/lib/documents";
 import { PRODUCT_UNITS } from "@/lib/documents";
-import { formatMoney, htToTtc, lineTotalTtc } from "@/lib/money";
+import { formatMoney, htToTtc, lineTotalTtc, roundMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 type CatalogItem = {
@@ -19,13 +21,6 @@ type CatalogItem = {
   unit: string;
   unitPriceHt: number;
 };
-
-function parseAmount(raw: string): number | null {
-  const cleaned = raw.replace(/[^0-9.,]/g, "").replace(",", ".");
-  if (cleaned === "") return null;
-  const n = Number(cleaned);
-  return Number.isFinite(n) ? Math.max(0, n) : null;
-}
 
 function AmountInput({
   value,
@@ -43,7 +38,7 @@ function AmountInput({
 
   useEffect(() => {
     if (!editing) {
-      setDraft(value === 0 ? "" : formatMoney(value));
+      setDraft(value === 0 ? "" : String(value));
     }
   }, [value, editing]);
 
@@ -51,20 +46,24 @@ function AmountInput({
     <input
       type="text"
       inputMode="decimal"
-      className={cn(className ?? inputDenseClass, "min-w-[5.25rem] text-right")}
-      value={editing ? draft : value === 0 ? "" : formatMoney(value)}
+      className={cn(className ?? inputDenseClass, "min-w-[5rem] text-right")}
+      value={editing ? draft : value === 0 ? "" : String(value)}
       onFocus={() => {
         setEditing(true);
         setDraft(value === 0 ? "" : String(value));
       }}
       onBlur={() => {
-        onChange(parseAmount(draft) ?? 0);
+        const cleaned = draft.replace(/[^0-9.,]/g, "").replace(",", ".");
+        const n = cleaned === "" ? 0 : Number(cleaned);
+        onChange(Number.isFinite(n) ? Math.max(0, n) : 0);
         setEditing(false);
       }}
       onChange={(e) => {
         setDraft(e.target.value);
-        const parsed = parseAmount(e.target.value);
-        if (parsed != null) onChange(parsed);
+        const cleaned = e.target.value.replace(/[^0-9.,]/g, "").replace(",", ".");
+        if (cleaned === "" || cleaned === ".") return;
+        const n = Number(cleaned);
+        if (Number.isFinite(n)) onChange(Math.max(0, n));
       }}
       placeholder={placeholder}
     />
@@ -77,31 +76,49 @@ function PuHtTtcCell({
   onChangeHt,
   readOnly,
   inputClassName,
+  showTtc,
 }: {
   valueHt: number;
   vatRate: number;
   onChangeHt: (value: number) => void;
   readOnly?: boolean;
   inputClassName?: string;
+  showTtc: boolean;
 }) {
   const ttc = htToTtc(valueHt, vatRate);
 
   if (readOnly) {
     return (
-      <div className="text-right tabular-nums">
+      <div className="text-right tabular-nums leading-tight">
         <p>{formatMoney(valueHt)}</p>
-        <p className="text-[10px] leading-tight text-ink-muted">{formatMoney(ttc)} TTC</p>
+        {showTtc && valueHt > 0 ? (
+          <p className="text-[10px] text-ink-muted">{formatMoney(ttc)} TTC</p>
+        ) : null}
       </div>
     );
   }
 
+  if (!showTtc) {
+    return (
+      <AmountInput
+        value={valueHt}
+        onChange={onChangeHt}
+        placeholder="HT"
+        className={inputClassName}
+      />
+    );
+  }
+
   return (
-    <div className="min-w-[5.25rem] text-right">
-      <AmountInput value={valueHt} onChange={onChangeHt} placeholder="HT" className={inputClassName} />
-      <p className="mt-0.5 text-[10px] leading-tight tabular-nums text-ink-muted">
-        {valueHt > 0 ? `${formatMoney(ttc)} TTC` : "TTC"}
-      </p>
-    </div>
+    <HtTtcField
+      compact
+      showLabels={false}
+      valueHt={valueHt}
+      vatRate={vatRate}
+      onChangeHt={onChangeHt}
+      fieldClassName={cn(inputClassName, "min-w-0 px-1")}
+      className="w-[8.75rem] gap-1"
+    />
   );
 }
 
@@ -182,6 +199,7 @@ export function LineItemsEditor({
   autoOpenCatalog,
   embedded,
   darkHead,
+  amountDisplay = "ht_ttc",
 }: {
   lines: LineItem[];
   onChange: (lines: LineItem[]) => void;
@@ -195,6 +213,8 @@ export function LineItemsEditor({
   embedded?: boolean;
   /** Dark table header (invoice-style layouts) */
   darkHead?: boolean;
+  /** HT only vs HT + TTC columns */
+  amountDisplay?: import("@/lib/documents").AmountDisplay;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState("");
@@ -219,6 +239,7 @@ export function LineItemsEditor({
   }, [catalog, pickerQuery]);
 
   const productCount = lines.filter((l) => !l.isNote && l.designation.trim()).length;
+  const showTtc = amountDisplay !== "ht";
   const lineFieldClass = embedded ? docFieldDenseClass : inputDenseClass;
   const lineHeadClass = embedded
     ? cn(
@@ -375,7 +396,9 @@ export function LineItemsEditor({
                   <th className={`${lineHeadClass} w-20`}>Unité</th>
                   <th className={`${lineHeadClass} w-12 text-right`}>Qté</th>
                   {!hideAmounts ? (
-                    <th className={`${lineHeadClass} w-[6.5rem] text-right`}>PU HT</th>
+                    <th className={`${lineHeadClass} w-[9.5rem] text-right`}>
+                      {showTtc ? "PU HT / TTC" : "PU HT"}
+                    </th>
                   ) : null}
                   {!hideAmounts ? (
                     <th className={`${lineHeadClass} w-[7rem] text-right`}>Total</th>
@@ -472,6 +495,7 @@ export function LineItemsEditor({
                             valueHt={line.unitPriceHt}
                             vatRate={vatRate}
                             readOnly={readOnly}
+                            showTtc={showTtc}
                             onChangeHt={(v) => updateLine(index, { unitPriceHt: v })}
                             inputClassName={lineFieldClass}
                           />
@@ -481,7 +505,14 @@ export function LineItemsEditor({
                         <td
                           className={`${lineCellClass} whitespace-nowrap text-right font-semibold tabular-nums text-ink`}
                         >
-                          {formatMoney(lineTotalTtc(line.qty, line.unitPriceHt, vatRate))}
+                          <div className="leading-tight">
+                            <p>{formatMoney(roundMoney(line.qty * line.unitPriceHt))}</p>
+                            {showTtc ? (
+                              <p className="text-[10px] font-normal text-ink-muted">
+                                {formatMoney(lineTotalTtc(line.qty, line.unitPriceHt, vatRate))} TTC
+                              </p>
+                            ) : null}
+                          </div>
                         </td>
                       ) : null}
                       {!readOnly ? (
@@ -541,10 +572,29 @@ function RowActions({
   onRemove: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!open || !buttonRef.current) {
+      setMenuPos(null);
+      return;
+    }
+    const rect = buttonRef.current.getBoundingClientRect();
+    const menuWidth = 144;
+    const menuHeight = 88;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < menuHeight + 8;
+    setMenuPos({
+      top: openUp ? rect.top - menuHeight - 4 : rect.bottom + 4,
+      left: Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)),
+    });
+  }, [open]);
 
   return (
     <div className="relative flex justify-end opacity-60 transition group-hover:opacity-100">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="rounded-md p-1.5 text-[#9CA3AF] hover:bg-[#F3F4F6] hover:text-[#374151]"
@@ -554,40 +604,46 @@ function RowActions({
         <MoreHorizontal className="h-3.5 w-3.5" />
       </button>
 
-      {open ? (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-40 cursor-default"
-            aria-label="Fermer le menu"
-            onClick={() => setOpen(false)}
-          />
-          <div className="absolute right-0 top-[calc(100%+4px)] z-50 w-36 overflow-hidden rounded-lg border border-black/[0.08] bg-white py-1 shadow-lg">
-            <button
-              type="button"
-              onClick={() => {
-                onDuplicate();
-                setOpen(false);
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink transition hover:bg-black/[0.04]"
-            >
-              <Copy className="h-3.5 w-3.5 text-[#9CA3AF]" />
-              Dupliquer
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onRemove();
-                setOpen(false);
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Supprimer
-            </button>
-          </div>
-        </>
-      ) : null}
+      {open && menuPos
+        ? createPortal(
+            <>
+              <button
+                type="button"
+                className="fixed inset-0 z-[80] cursor-default"
+                aria-label="Fermer le menu"
+                onClick={() => setOpen(false)}
+              />
+              <div
+                className="fixed z-[90] w-36 overflow-hidden rounded-lg border border-black/[0.08] bg-white py-1 shadow-lg"
+                style={{ top: menuPos.top, left: menuPos.left }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDuplicate();
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink transition hover:bg-black/[0.04]"
+                >
+                  <Copy className="h-3.5 w-3.5 text-[#9CA3AF]" />
+                  Dupliquer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onRemove();
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Supprimer
+                </button>
+              </div>
+            </>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

@@ -190,10 +190,10 @@ export function LayoutMetaBar({
             style={{ borderColor: accent }}
           >
             <p className="text-[0.85em] font-bold" style={{ color: accent }}>
-              Solde dû
+              {ctx.dueLabel === "Net HT" ? "Net HT" : "Solde dû"}
             </p>
             <p className="mt-1 text-[1.25em] font-bold tabular-nums text-slate-800">
-              {ctx.money(ctx.netToPay)}
+              {ctx.money(ctx.dueAmount)}
             </p>
           </div>
         ) : null}
@@ -480,6 +480,7 @@ export function LayoutLines({
         <LineItemsEditor
           embedded
           darkHead={darkHead}
+          amountDisplay={edit.amountDisplay}
           lines={edit.lines}
           onChange={edit.onLinesChange}
           catalog={edit.catalog}
@@ -519,6 +520,7 @@ export function LayoutAdjustments({
             fieldClassName={docFieldClass}
             compact
             showLabels={false}
+            htOnly={!ctx.showTtc}
           />
         </div>
         <div>
@@ -530,6 +532,7 @@ export function LayoutAdjustments({
             fieldClassName={docFieldClass}
             compact
             showLabels={false}
+            htOnly={!ctx.showTtc}
           />
         </div>
         <div>
@@ -565,6 +568,7 @@ export function LayoutAdjustments({
           vatRate={edit.vatRate}
           onChangeHt={edit.onDiscountChange}
           fieldClassName={docFieldClass}
+          htOnly={!ctx.showTtc}
         />
       </div>
       <div className="border-b border-slate-200 p-3 text-[0.85em]">
@@ -574,6 +578,7 @@ export function LayoutAdjustments({
           vatRate={edit.vatRate}
           onChangeHt={edit.onDepositChange}
           fieldClassName={docFieldClass}
+          htOnly={!ctx.showTtc}
         />
       </div>
       <div className="border-b border-slate-200 p-3 sm:col-span-2">
@@ -664,7 +669,7 @@ export function LayoutNetSummary({
 
   const vatRate = edit?.vatRate ?? ctx.vatRate;
   const vatAmount = edit ? formatMoney(ctx.vatAmount) : ctx.money(ctx.vatAmount);
-  const netToPay = edit ? formatMoney(ctx.netToPay) : ctx.money(ctx.netToPay);
+  const due = edit ? formatMoney(ctx.dueAmount) : ctx.money(ctx.dueAmount);
 
   return (
     <div className={className} style={style}>
@@ -673,8 +678,8 @@ export function LayoutNetSummary({
         <p className="tabular-nums">{vatAmount}</p>
       </div>
       <div className="col-span-3 p-2 text-center">
-        <p style={{ color: ctx.theme.accent }}>Net à payer</p>
-        <p className="text-[1.2em] font-bold tabular-nums">{netToPay} MAD</p>
+        <p style={{ color: ctx.theme.accent }}>{ctx.dueLabel}</p>
+        <p className="text-[1.2em] font-bold tabular-nums">{due} MAD</p>
       </div>
     </div>
   );

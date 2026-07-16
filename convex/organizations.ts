@@ -59,8 +59,8 @@ async function createOrganizationForUser(
     sellerCnss: "",
     sellerLegal: "",
     sellerContact: "",
-    documentTemplate: "classic",
-    documentColor: "navy",
+    documentTemplate: "ruby",
+    documentColor: "crimson",
     updatedAt: now,
   });
 

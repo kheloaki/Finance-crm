@@ -34,6 +34,7 @@ export type DocumentEditState = {
   onDepositChange: (v: number) => void;
   notes: string;
   onNotesChange: (v: string) => void;
+  amountDisplay: import("@/lib/documents").AmountDisplay;
   settings?: CompanySettings | null;
   autoOpenCatalog?: boolean;
 };

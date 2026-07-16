@@ -12,6 +12,7 @@ import {
   DOCUMENT_LABELS,
   STATUS_BADGE_CLASS,
   STATUS_LABELS,
+  type AmountDisplay,
   type DocumentType,
   type LineItem,
 } from "@/lib/documents";
@@ -50,6 +51,7 @@ type Props = {
   onNotesChange: (v: string) => void;
   settings?: CompanySettings | null;
   showCachet: boolean;
+  amountDisplay: AmountDisplay;
   readOnly: boolean;
   isNew: boolean;
   status?: DocStatus;
@@ -98,6 +100,7 @@ export function DocumentInlineEditor(props: Props) {
     onNotesChange,
     settings,
     showCachet,
+    amountDisplay,
     readOnly,
     isNew,
     status,
@@ -145,6 +148,7 @@ export function DocumentInlineEditor(props: Props) {
     settings,
     templateId,
     showCachet,
+    amountDisplay,
   });
 
   const editState = {
@@ -177,6 +181,7 @@ export function DocumentInlineEditor(props: Props) {
     onDepositChange,
     notes,
     onNotesChange,
+    amountDisplay,
     settings,
     autoOpenCatalog,
   };
@@ -244,6 +249,34 @@ export function DocumentCachetButton({
     >
       <Stamp className="h-3.5 w-3.5" />
       {showCachet ? "Cachet" : "Cachet"}
+    </Button>
+  );
+}
+
+export function DocumentAmountDisplayButton({
+  amountDisplay,
+  readOnly,
+  onChange,
+}: {
+  amountDisplay: AmountDisplay;
+  readOnly: boolean;
+  onChange: (v: AmountDisplay) => void;
+}) {
+  const showTtc = amountDisplay === "ht_ttc";
+  return (
+    <Button
+      type="button"
+      variant={showTtc ? "default" : "secondary"}
+      size="sm"
+      disabled={readOnly}
+      title={
+        showTtc
+          ? "Afficher uniquement les montants HT"
+          : "Afficher HT et TTC"
+      }
+      onClick={() => onChange(showTtc ? "ht" : "ht_ttc")}
+    >
+      {showTtc ? "HT + TTC" : "HT seul"}
     </Button>
   );
 }

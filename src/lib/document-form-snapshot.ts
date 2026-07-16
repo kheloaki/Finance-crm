@@ -11,6 +11,7 @@ export type DocumentFormSnapshot = {
   deposit: number;
   notes: string;
   showCachet: boolean;
+  amountDisplay: import("@/lib/documents").AmountDisplay;
   projectId: string;
   lines: LineItem[];
 };

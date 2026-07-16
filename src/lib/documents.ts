@@ -63,6 +63,15 @@ export function isDeliveryNote(type: DocumentType) {
   return type === "bon_livraison";
 }
 
+/** Line/total amount columns: HT only, or HT + TTC */
+export type AmountDisplay = "ht" | "ht_ttc";
+
+export const DEFAULT_AMOUNT_DISPLAY: AmountDisplay = "ht_ttc";
+
+export function normalizeAmountDisplay(value?: string | null): AmountDisplay {
+  return value === "ht" ? "ht" : DEFAULT_AMOUNT_DISPLAY;
+}
+
 export function documentPath(type: DocumentType) {
   return `/documents/${DOCUMENT_SLUGS[type]}`;
 }

@@ -24,6 +24,7 @@ export type EnrichedDocument = {
   deposit: number;
   notes: string;
   showCachet?: boolean;
+  amountDisplay?: import("@/lib/documents").AmountDisplay;
   clientId?: string;
   supplierId?: string;
   totalHt: number;

@@ -1,6 +1,6 @@
 import type { CompanySettings } from "@/lib/convex-types";
-import type { DocumentType, LineItem } from "@/lib/documents";
-import { DOCUMENT_LABELS, isDeliveryNote } from "@/lib/documents";
+import type { AmountDisplay, DocumentType, LineItem } from "@/lib/documents";
+import { DOCUMENT_LABELS, isDeliveryNote, normalizeAmountDisplay } from "@/lib/documents";
 import { normalizeDocumentColor } from "@/lib/document-colors";
 import { normalizeDocumentTemplate, type DocumentTemplateId } from "@/lib/document-templates";
 import { resolveDocumentTheme, type DocumentTheme } from "@/lib/document-theme";
@@ -20,6 +20,7 @@ export type DocumentExportInput = {
   lines: LineItem[];
   isSupplier: boolean;
   showCachet?: boolean;
+  amountDisplay?: AmountDisplay;
   counterparty: {
     name: string;
     ice?: string;
@@ -61,6 +62,7 @@ export type DocumentExportModel = DocumentExportInput & {
   vatAmount: number;
   totalTtc: number;
   netToPay: number;
+  showTtc: boolean;
 };
 
 export function buildDocumentExportModel(input: DocumentExportInput): DocumentExportModel {
@@ -74,6 +76,8 @@ export function buildDocumentExportModel(input: DocumentExportInput): DocumentEx
   return {
     ...input,
     ...totals,
+    amountDisplay: normalizeAmountDisplay(input.amountDisplay),
+    showTtc: normalizeAmountDisplay(input.amountDisplay) === "ht_ttc",
     templateId: normalizeDocumentTemplate(input.settings.documentTemplate),
     theme: resolveDocumentTheme(normalizeDocumentColor(input.settings.documentColor)),
     delivery: isDeliveryNote(input.documentType),

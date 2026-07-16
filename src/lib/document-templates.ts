@@ -24,7 +24,7 @@ export const DOCUMENT_TEMPLATE_IDS = [
 
 export type DocumentTemplateId = (typeof DOCUMENT_TEMPLATE_IDS)[number];
 
-export const DEFAULT_DOCUMENT_TEMPLATE: DocumentTemplateId = "classic";
+export const DEFAULT_DOCUMENT_TEMPLATE: DocumentTemplateId = "ruby";
 
 export function normalizeDocumentTemplate(
   value: string | undefined | null,

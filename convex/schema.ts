@@ -178,6 +178,7 @@ export default defineSchema({
     deposit: v.number(),
     notes: v.string(),
     showCachet: v.optional(v.boolean()),
+    amountDisplay: v.optional(v.union(v.literal("ht"), v.literal("ht_ttc"))),
     linkedDocumentId: v.optional(v.id("documents")),
     status: documentStatusValidator,
     totalHt: v.number(),

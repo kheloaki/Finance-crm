@@ -103,6 +103,9 @@ export async function exportDocumentPdf(input: DocumentExportInput) {
     totalTtc: model.totalTtc,
     netToPay: model.netToPay,
     notes: model.notes ?? "",
+    showTtc: model.showTtc,
+    dueAmount: model.showTtc ? model.netToPay : model.netHt,
+    dueLabel: model.showTtc ? "Net à payer" : "Net HT",
     lines: model.lines.map((l) => ({
       reference: l.reference,
       designation: l.designation,

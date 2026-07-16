@@ -332,6 +332,7 @@ export const create = mutation({
     deposit: v.optional(v.number()),
     notes: v.optional(v.string()),
     showCachet: v.optional(v.boolean()),
+    amountDisplay: v.optional(v.union(v.literal("ht"), v.literal("ht_ttc"))),
     linkedDocumentId: v.optional(v.id("documents")),
     lines: v.array(lineInput),
   },
@@ -365,6 +366,7 @@ export const create = mutation({
       deposit: args.deposit ?? 0,
       notes: args.notes?.trim() ?? "",
       showCachet: args.showCachet ?? false,
+      amountDisplay: args.amountDisplay === "ht" ? "ht" : "ht_ttc",
       linkedDocumentId: args.linkedDocumentId,
       status: "draft",
       totalHt: totals.totalHt,
@@ -392,6 +394,7 @@ export const update = mutation({
     deposit: v.optional(v.number()),
     notes: v.optional(v.string()),
     showCachet: v.optional(v.boolean()),
+    amountDisplay: v.optional(v.union(v.literal("ht"), v.literal("ht_ttc"))),
     linkedDocumentId: v.optional(v.id("documents")),
     lines: v.array(lineInput),
   },
@@ -436,6 +439,12 @@ export const update = mutation({
       notes: args.notes?.trim() ?? "",
       linkedDocumentId: args.linkedDocumentId,
       showCachet: args.showCachet ?? doc.showCachet ?? false,
+      amountDisplay:
+        args.amountDisplay === "ht" || args.amountDisplay === "ht_ttc"
+          ? args.amountDisplay
+          : doc.amountDisplay === "ht"
+            ? "ht"
+            : "ht_ttc",
       totalHt: totals.totalHt,
       totalTtc: totals.totalTtc,
       updatedAt: Date.now(),
@@ -514,6 +523,7 @@ export const duplicate = mutation({
       deposit: doc.deposit,
       notes: doc.notes,
       showCachet: doc.showCachet ?? false,
+      amountDisplay: doc.amountDisplay === "ht" ? "ht" : "ht_ttc",
       linkedDocumentId: doc.linkedDocumentId,
       status: "draft",
       totalHt: doc.totalHt,

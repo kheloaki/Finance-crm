@@ -62,6 +62,7 @@ export function DocumentListPage({ documentType }: { documentType: DocumentType 
         })),
         isSupplier: isSupplierDocument(documentType),
         showCachet: doc.showCachet ?? false,
+        amountDisplay: doc.amountDisplay === "ht" ? "ht" : "ht_ttc",
         counterparty: {
           name: counterparty.name,
           ice: counterparty.ice || undefined,

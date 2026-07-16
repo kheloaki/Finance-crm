@@ -15,7 +15,7 @@ export const DOCUMENT_COLOR_IDS = [
 
 export type DocumentColorId = (typeof DOCUMENT_COLOR_IDS)[number];
 
-export const DEFAULT_DOCUMENT_COLOR: DocumentColorId = "navy";
+export const DEFAULT_DOCUMENT_COLOR: DocumentColorId = "crimson";
 
 export function normalizeDocumentColor(value: string | undefined | null): DocumentColorId {
   if (value && DOCUMENT_COLOR_IDS.includes(value as DocumentColorId)) {

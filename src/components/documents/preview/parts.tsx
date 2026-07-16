@@ -117,17 +117,27 @@ export function TotalsBanner({
   dark?: boolean;
 }) {
   if (ctx.deliveryNote) return null;
-  return (
-    <div
-      className="grid grid-cols-2 gap-px overflow-hidden rounded-lg sm:grid-cols-4"
-      style={style}
-    >
-      {[
+  const cells = ctx.showTtc
+    ? [
         { k: "Total HT", v: ctx.totalHt },
         { k: "TVA", v: ctx.vatAmount },
         { k: "Total TTC", v: ctx.totalTtc },
         { k: "Net à payer", v: ctx.netToPay, highlight: true },
-      ].map(({ k, v, highlight }) => (
+      ]
+    : [
+        { k: "Total HT", v: ctx.totalHt },
+        { k: "TVA", v: ctx.vatAmount },
+        { k: "Net HT", v: ctx.netHt, highlight: true },
+      ];
+  return (
+    <div
+      className={cn(
+        "grid gap-px overflow-hidden rounded-lg",
+        ctx.showTtc ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3",
+      )}
+      style={style}
+    >
+      {cells.map(({ k, v, highlight }) => (
         <div
           key={k}
           className={`px-2 py-2 text-center ${highlight ? (dark ? "font-bold" : "bg-white/95 font-bold") : dark ? "bg-white/10" : "bg-white/90"}`}
@@ -196,7 +206,10 @@ export function LinesSpreadsheet({
     <table className="w-full border-collapse text-[0.8em]">
       <thead>
         <tr style={head}>
-          {["Désignation", "U", "Qté", "PU HT", "TTC"].map((h) => (
+          {(ctx.showTtc
+            ? ["Désignation", "U", "Qté", "PU HT", "TTC"]
+            : ["Désignation", "U", "Qté", "PU HT", "Total HT"]
+          ).map((h) => (
             <th key={h} className="border p-1 text-left last:text-right">
               {h}
             </th>
@@ -220,7 +233,9 @@ export function LinesSpreadsheet({
                 <td className="border p-1.5 align-top text-right tabular-nums">{line.qty}</td>
                 <td className="border p-1.5 align-top text-right tabular-nums">{ctx.money(line.unitPriceHt)}</td>
                 <td className="border p-1.5 align-top text-right font-semibold tabular-nums">
-                  {ctx.money(ctx.lineTtc(line))}
+                  {ctx.showTtc
+                    ? ctx.money(ctx.lineAmount(line))
+                    : ctx.money(line.qty * line.unitPriceHt)}
                 </td>
               </tr>
             ))

@@ -1,6 +1,8 @@
 import {
   DOCUMENT_LABELS,
   isDeliveryNote,
+  normalizeAmountDisplay,
+  type AmountDisplay,
   type DocumentType,
   type LineItem,
 } from "@/lib/documents";
@@ -9,7 +11,7 @@ import { resolveDocumentCompanySettings, resolvePreviewCompanySettings } from "@
 import { normalizeDocumentColor } from "@/lib/document-colors";
 import { normalizeDocumentTemplate, type DocumentTemplateId } from "@/lib/document-templates";
 import { resolveDocumentTheme } from "@/lib/document-theme";
-import { computeDocumentTotals, lineTotalTtc } from "@/lib/money";
+import { computeDocumentTotals, lineTotalTtc, roundMoney } from "@/lib/money";
 import { formatDate, formatMoney } from "@/lib/utils";
 import type { PreviewContext } from "./types";
 
@@ -33,6 +35,7 @@ type BuildInput = {
   settings?: CompanySettings | null;
   templateId: DocumentTemplateId;
   showCachet?: boolean;
+  amountDisplay?: AmountDisplay;
   /** Use sample company data for empty fields (settings / design previews only). */
   previewMode?: boolean;
 };
@@ -43,6 +46,11 @@ export function buildPreviewContext(input: BuildInput): PreviewContext {
   const company = input.previewMode
     ? resolvePreviewCompanySettings(input.settings)
     : resolveDocumentCompanySettings(input.settings);
+  const showTtc = normalizeAmountDisplay(input.amountDisplay) === "ht_ttc";
+  const lineAmount = (line: LineItem) =>
+    showTtc
+      ? lineTotalTtc(line.qty, line.unitPriceHt, input.vatRate)
+      : roundMoney(line.qty * line.unitPriceHt);
 
   return {
     templateId: input.templateId,
@@ -84,8 +92,12 @@ export function buildPreviewContext(input: BuildInput): PreviewContext {
     theme: resolveDocumentTheme(normalizeDocumentColor(company.documentColor ?? input.settings?.documentColor)),
     settings: company,
     ...totals,
+    showTtc,
+    dueAmount: showTtc ? totals.netToPay : totals.netHt,
+    dueLabel: showTtc ? "Net à payer" : "Net HT",
     money: formatMoney,
-    lineTtc: (line) => lineTotalTtc(line.qty, line.unitPriceHt, input.vatRate),
+    lineAmount,
+    lineTtc: lineAmount,
   };
 }
 

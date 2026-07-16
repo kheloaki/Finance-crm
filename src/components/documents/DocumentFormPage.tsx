@@ -13,6 +13,7 @@ import type {
   Supplier,
 } from "@/lib/convex-types";
 import {
+  DocumentAmountDisplayButton,
   DocumentCachetButton,
   DocumentInlineEditor,
 } from "@/components/documents/DocumentInlineEditor";
@@ -24,6 +25,8 @@ import { projectIdForSave } from "@/components/projects/ProjectSelect";
 import {
   documentPath,
   isSupplierDocument,
+  normalizeAmountDisplay,
+  type AmountDisplay,
   type DocumentType,
   type LineItem,
 } from "@/lib/documents";
@@ -64,6 +67,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
   const [deposit, setDeposit] = useState(0);
   const [notes, setNotes] = useState("");
   const [showCachet, setShowCachet] = useState(false);
+  const [amountDisplay, setAmountDisplay] = useState<AmountDisplay>("ht_ttc");
   const [projectId, setProjectId] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
   const [pending, setPending] = useState(false);
@@ -124,6 +128,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
     setDeposit(existing.deposit);
     setNotes(existing.notes);
     setShowCachet(existing.showCachet ?? false);
+    setAmountDisplay(normalizeAmountDisplay(existing.amountDisplay));
     setProjectId(existing.projectId ?? "");
     const nextLines = existing.lines.map((l) => ({
       catalogItemId: l.catalogItemId,
@@ -148,6 +153,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
         deposit: existing.deposit,
         notes: existing.notes,
         showCachet: existing.showCachet ?? false,
+        amountDisplay: normalizeAmountDisplay(existing.amountDisplay),
         projectId: existing.projectId ?? "",
         lines: nextLines,
       }),
@@ -168,6 +174,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
       deposit,
       notes,
       showCachet,
+      amountDisplay,
       projectId,
       lines,
     }),
@@ -182,6 +189,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
       deposit,
       notes,
       showCachet,
+      amountDisplay,
       projectId,
       lines,
     ],
@@ -262,6 +270,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
           deposit,
           notes,
           showCachet,
+          amountDisplay,
           lines: lines.map((l, i) => ({
             ...l,
             sortOrder: i,
@@ -321,6 +330,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
       deposit,
       notes,
       showCachet,
+      amountDisplay,
       lines,
       formSnapshot,
       isNew,
@@ -448,6 +458,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
       lines,
       isSupplier,
       showCachet,
+      amountDisplay,
       counterparty: {
         name: counterpartyName,
         ice: counterpartyIce || undefined,
@@ -493,6 +504,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
         onNotesChange={setNotes}
         settings={settings}
         showCachet={showCachet}
+        amountDisplay={amountDisplay}
         readOnly={readOnly}
         isNew={isNew}
         status={
@@ -505,7 +517,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
                 : "draft"
         }
         totals={totals}
-        autoOpenCatalog={isNew && !readOnly}
+        autoOpenCatalog={false}
         error={error}
         toolbar={
           <>
@@ -567,6 +579,11 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
                     hasCachetAsset={hasCachetAsset}
                     readOnly={readOnly}
                     onToggle={() => setShowCachet((v) => !v)}
+                  />
+                  <DocumentAmountDisplayButton
+                    amountDisplay={amountDisplay}
+                    readOnly={readOnly}
+                    onChange={setAmountDisplay}
                   />
                 </div>
                 <div className="flex flex-wrap gap-2">

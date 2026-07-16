@@ -45,9 +45,17 @@ export type PreviewContext = {
   vatAmount: number;
   totalTtc: number;
   netToPay: number;
+  /** When false, hide TTC on lines and totals (HT + TVA only). */
+  showTtc: boolean;
+  /** Line total for display (TTC when showTtc, else HT). */
+  lineAmount: (line: LineItem) => number;
+  /** Highlighted due / net amount for display. */
+  dueAmount: number;
+  dueLabel: string;
   settings?: CompanySettings | null;
   previewMode?: boolean;
   money: (n: number) => string;
+  /** @deprecated Prefer lineAmount — same as lineAmount when showTtc. */
   lineTtc: (line: LineItem) => number;
 };
 

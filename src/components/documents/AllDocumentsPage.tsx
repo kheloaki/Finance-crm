@@ -134,6 +134,7 @@ export function AllDocumentsPage() {
         })),
         isSupplier: isSupplierDocument(doc.documentType),
         showCachet: doc.showCachet ?? false,
+        amountDisplay: doc.amountDisplay === "ht" ? "ht" : "ht_ttc",
         counterparty: {
           name: counterparty.name,
           ice: counterparty.ice || undefined,

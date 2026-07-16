@@ -90,7 +90,7 @@ export function ClassicLayout({ ctx }: LayoutProps) {
             </div>
             <div className="col-span-3 p-2 text-center" style={primaryDarkBg(ctx)}>
               <p style={{ color: ctx.theme.accent }}>Net à payer</p>
-              <p className="text-[1.2em] font-bold tabular-nums">{ctx.money(ctx.netToPay)}</p>
+              <p className="text-[1.2em] font-bold tabular-nums">{ctx.money(ctx.dueAmount)}</p>
             </div>
           </div>
         </>
@@ -158,7 +158,7 @@ export function ModernLayout({ ctx }: LayoutProps) {
                 </div>
                 {!ctx.deliveryNote ? (
                   <p className="shrink-0 font-bold tabular-nums" style={accentText(ctx)}>
-                    {ctx.money(ctx.lineTtc(line))}
+                    {ctx.money(ctx.lineAmount(line))}
                   </p>
                 ) : null}
               </div>
@@ -244,7 +244,7 @@ export function MinimalLayout({ ctx }: LayoutProps) {
                   )}
                 </div>
                 {!ctx.deliveryNote ? (
-                  <p className="shrink-0 tabular-nums font-medium">{ctx.money(ctx.lineTtc(line))}</p>
+                  <p className="shrink-0 tabular-nums font-medium">{ctx.money(ctx.lineAmount(line))}</p>
                 ) : null}
               </div>
             ))
@@ -270,7 +270,7 @@ export function MinimalLayout({ ctx }: LayoutProps) {
               style={{ borderColor: ctx.theme.primaryDark }}
             >
               <dt>Net à payer</dt>
-              <dd className="w-20 tabular-nums">{ctx.money(ctx.netToPay)}</dd>
+              <dd className="w-20 tabular-nums">{ctx.money(ctx.dueAmount)}</dd>
             </div>
           </dl>
         </>
@@ -347,7 +347,7 @@ export function ExecutiveLayout({ ctx }: LayoutProps) {
                     </td>
                     {!ctx.deliveryNote ? (
                       <td className="py-2 text-right font-semibold tabular-nums">
-                        {ctx.money(ctx.lineTtc(line))}
+                        {ctx.money(ctx.lineAmount(line))}
                       </td>
                     ) : null}
                   </tr>
@@ -366,7 +366,7 @@ export function ExecutiveLayout({ ctx }: LayoutProps) {
               Net à payer
             </p>
             <p className="text-[1.8em] font-black tabular-nums" style={{ color: ctx.theme.accent }}>
-              {ctx.money(ctx.netToPay)} <span className="text-[0.5em]">MAD</span>
+              {ctx.money(ctx.dueAmount)} <span className="text-[0.5em]">MAD</span>
             </p>
           </div>
         </>
@@ -447,7 +447,7 @@ export function CorporateLayout({ ctx }: LayoutProps) {
               <div className="mt-1 flex items-baseline justify-between gap-6 border-t border-slate-200 bg-slate-50 px-2.5 py-2">
                 <dt className="font-bold uppercase tracking-wide text-slate-800">Total</dt>
                 <dd className="text-[1.15em] font-bold tabular-nums text-[#0f172a]">
-                  {ctx.money(ctx.netToPay)}
+                  {ctx.money(ctx.dueAmount)}
                 </dd>
               </div>
             </dl>
@@ -517,7 +517,7 @@ export function FreshLayout({ ctx }: LayoutProps) {
                   <span className="truncate font-medium">{line.designation}</span>
                   {!ctx.deliveryNote ? (
                     <span className="ml-2 shrink-0 font-bold tabular-nums" style={accentText(ctx)}>
-                      {ctx.money(ctx.lineTtc(line))}
+                      {ctx.money(ctx.lineAmount(line))}
                     </span>
                   ) : (
                     <span className="text-[0.85em]" style={accentText(ctx)}>
@@ -534,9 +534,15 @@ export function FreshLayout({ ctx }: LayoutProps) {
           <>
             <LayoutAdjustments ctx={ctx} className="mb-2" />
             <div className="mb-2 rounded-2xl p-4 text-center shadow-md" style={gradientBannerStyle(ctx)}>
-              <p className="text-[0.7em] uppercase opacity-90">Total TTC</p>
-              <p className="text-[1.4em] font-black tabular-nums">{ctx.money(ctx.totalTtc)}</p>
-              <p className="mt-1 text-[0.85em]">Net : {ctx.money(ctx.netToPay)} MAD</p>
+              <p className="text-[0.7em] uppercase opacity-90">
+                {ctx.showTtc ? "Total TTC" : "Total HT"}
+              </p>
+              <p className="text-[1.4em] font-black tabular-nums">
+                {ctx.money(ctx.showTtc ? ctx.totalTtc : ctx.totalHt)}
+              </p>
+              <p className="mt-1 text-[0.85em]">
+                {ctx.dueLabel} : {ctx.money(ctx.dueAmount)} MAD
+              </p>
             </div>
           </>
         ) : null}
@@ -610,7 +616,7 @@ export function WarmLayout({ ctx }: LayoutProps) {
                       {line.qty} {line.unit}
                     </span>
                     {!ctx.deliveryNote ? (
-                      <span className="font-bold tabular-nums">{ctx.money(ctx.lineTtc(line))}</span>
+                      <span className="font-bold tabular-nums">{ctx.money(ctx.lineAmount(line))}</span>
                     ) : null}
                   </div>
                 </div>
@@ -624,12 +630,14 @@ export function WarmLayout({ ctx }: LayoutProps) {
             <LayoutAdjustments ctx={ctx} className="mb-2" />
             <div className="flex items-center justify-end gap-3">
               <div className="text-right text-[0.85em]">
-                <p>TTC {ctx.money(ctx.totalTtc)}</p>
+                <p>
+                  {ctx.showTtc ? "TTC" : "HT"} {ctx.money(ctx.showTtc ? ctx.totalTtc : ctx.totalHt)}
+                </p>
               </div>
               <div className="flex h-16 w-16 flex-col items-center justify-center rounded-full shadow-lg" style={primaryBg(ctx)}>
                 <span className="text-[0.55em] uppercase">Net</span>
                 <span className="text-[0.75em] font-bold tabular-nums leading-none">
-                  {ctx.money(ctx.netToPay)}
+                  {ctx.money(ctx.dueAmount)}
                 </span>
               </div>
             </div>
@@ -714,8 +722,8 @@ export function OceanLayout({ ctx }: LayoutProps) {
                 className="flex justify-between px-2 py-1.5 font-bold text-white"
                 style={{ ...primaryBg(ctx), borderRadius: "0 0 4px 4px" }}
               >
-                <span>Total TTC</span>
-                <span className="tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
+                <span>{ctx.showTtc ? "Total TTC" : "Total HT"}</span>
+                <span className="tabular-nums">{ctx.money(ctx.dueAmount)} MAD</span>
               </div>
             </div>
           </>
@@ -778,7 +786,9 @@ export function SlateLayout({ ctx }: LayoutProps) {
                     <span className="text-slate-500">
                       {" "}
                       — {line.qty} {line.unit}
-                      {!ctx.deliveryNote ? ` — ${ctx.money(ctx.lineTtc(line))} TTC` : ""}
+                      {!ctx.deliveryNote
+                        ? ` — ${ctx.money(ctx.lineAmount(line))}${ctx.showTtc ? " TTC" : " HT"}`
+                        : ""}
                     </span>
                   </li>
                 ))
@@ -793,9 +803,9 @@ export function SlateLayout({ ctx }: LayoutProps) {
             <p className="mb-3 text-[0.9em]">
               Montant total dû :{" "}
               <strong className="text-[1.1em] tabular-nums" style={{ color: ctx.theme.primaryDark }}>
-                {ctx.money(ctx.netToPay)} MAD
-              </strong>{" "}
-              TTC.
+                {ctx.money(ctx.dueAmount)} MAD
+              </strong>
+              {ctx.showTtc ? " TTC." : " HT."}
             </p>
           </>
         ) : null}
@@ -897,7 +907,7 @@ export function RoyalLayout({ ctx }: LayoutProps) {
                       </td>
                       {!ctx.deliveryNote ? (
                         <td className="border-t p-1.5 text-right font-semibold tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                          {ctx.money(ctx.lineTtc(line))}
+                          {ctx.money(ctx.lineAmount(line))}
                         </td>
                       ) : null}
                     </tr>
@@ -920,7 +930,7 @@ export function RoyalLayout({ ctx }: LayoutProps) {
                 Net à payer
               </p>
               <p className="text-[1.35em] font-bold tabular-nums" style={{ color: ctx.theme.primaryDark }}>
-                {ctx.money(ctx.netToPay)} MAD
+                {ctx.money(ctx.dueAmount)} MAD
               </p>
             </div>
           </>
@@ -977,7 +987,7 @@ export function GeometricLayout({ ctx }: LayoutProps) {
           {!ctx.deliveryNote ? (
             <div className="rounded bg-neutral-900 p-1.5 text-white">
               <p className="opacity-70">Total dû</p>
-              <p className="font-bold tabular-nums">{ctx.money(ctx.netToPay)}</p>
+              <p className="font-bold tabular-nums">{ctx.money(ctx.dueAmount)}</p>
             </div>
           ) : null}
           <div className="rounded border border-neutral-200 bg-neutral-50 p-1.5">
@@ -1014,7 +1024,7 @@ export function GeometricLayout({ ctx }: LayoutProps) {
           <div className="mx-[5%] mb-2 flex justify-end">
             <div className="rounded bg-neutral-900 px-4 py-2 text-right text-white">
               <p className="text-[0.65em] uppercase opacity-70">Net à payer</p>
-              <p className="text-[1.15em] font-bold tabular-nums">{ctx.money(ctx.netToPay)} MAD</p>
+              <p className="text-[1.15em] font-bold tabular-nums">{ctx.money(ctx.dueAmount)} MAD</p>
             </div>
           </div>
         </>
@@ -1089,8 +1099,8 @@ export function StripeLayout({ ctx }: LayoutProps) {
                   className="flex justify-between px-2 py-1.5 font-bold"
                   style={{ ...primaryBg(ctx), borderRadius: "0 0 4px 4px" }}
                 >
-                  <span>Total TTC</span>
-                  <span className="tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
+                  <span>{ctx.showTtc ? "Total TTC" : "Total HT"}</span>
+                  <span className="tabular-nums">{ctx.money(ctx.dueAmount)} MAD</span>
                 </div>
               </div>
             </>
@@ -1209,7 +1219,7 @@ export function InterimLayout({ ctx }: LayoutProps) {
             <div className="mt-1 rounded px-3 py-2 font-bold text-white" style={primaryDarkBg(ctx)}>
               <div className="flex justify-end gap-6">
                 <span>TOTAL</span>
-                <span className="w-16 tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
+                <span className="w-16 tabular-nums">{ctx.money(ctx.dueAmount)} MAD</span>
               </div>
             </div>
           </div>
@@ -1299,7 +1309,7 @@ export function BlueproLayout({ ctx }: LayoutProps) {
               </div>
               <div className="flex justify-between border-t-2 pt-1 font-bold" style={accentBorder(ctx)}>
                 <span>Total</span>
-                <span className="tabular-nums">{ctx.money(ctx.netToPay)} MAD</span>
+                <span className="tabular-nums">{ctx.money(ctx.dueAmount)} MAD</span>
               </div>
             </div>
           </div>
@@ -1362,8 +1372,8 @@ export function StudioLayout({ ctx }: LayoutProps) {
               <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
             </div>
             <div className="inline-flex min-w-[140px] justify-between rounded px-3 py-1.5 font-bold text-white" style={primaryBg(ctx)}>
-              <span>Solde dû</span>
-              <span className="tabular-nums">{ctx.money(ctx.netToPay)}</span>
+              <span>{ctx.showTtc ? "Solde dû" : ctx.dueLabel}</span>
+              <span className="tabular-nums">{ctx.money(ctx.dueAmount)}</span>
             </div>
           </div>
         </>
@@ -1447,11 +1457,21 @@ export function LedgerLayout({ ctx }: LayoutProps) {
                   <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.vatAmount)}</dd>
                 </div>
                 <div className="mt-1 flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
-                  <dt className="font-bold text-[#0f172a]">Total</dt>
+                  <dt className="font-bold text-[#0f172a]">
+                    {ctx.showTtc ? "Total" : ctx.dueLabel}
+                  </dt>
                   <dd className="text-[1.1em] font-bold tabular-nums text-[#0f172a]">
-                    {ctx.money(ctx.netToPay)}
+                    {ctx.money(ctx.showTtc ? ctx.totalTtc : ctx.dueAmount)}
                   </dd>
                 </div>
+                {ctx.showTtc ? (
+                  <div className="flex items-baseline justify-between gap-6">
+                    <dt className="font-bold text-[#0f172a]">Solde dû</dt>
+                    <dd className="font-bold tabular-nums text-[#0f172a]">
+                      {ctx.money(ctx.dueAmount)}
+                    </dd>
+                  </div>
+                ) : null}
               </dl>
             </div>
           </div>
@@ -1500,8 +1520,10 @@ export function FolioLayout({ ctx }: LayoutProps) {
         {!ctx.deliveryNote ? (
           <div className="flex justify-end bg-[#f3f4f6] px-6 py-2.5 sm:px-8">
             <p className="text-[0.85em] font-bold uppercase tracking-wide text-[#0f172a]">
-              Solde dû{" "}
-              <span className="ml-3 tabular-nums">{ctx.money(ctx.netToPay)}</span>
+              {ctx.dueLabel === "Net HT" ? "Net HT" : "Solde dû"}{" "}
+              <span className="ml-3 tabular-nums">
+                {ctx.money(ctx.dueAmount)}
+              </span>
             </p>
           </div>
         ) : null}
@@ -1553,7 +1575,7 @@ export function FolioLayout({ ctx }: LayoutProps) {
                         <td className="py-3 text-right tabular-nums text-slate-600">{line.qty}</td>
                         {!ctx.deliveryNote ? (
                           <td className="py-3 text-right font-medium tabular-nums text-[#0f172a]">
-                            {ctx.money(ctx.lineTtc(line))}
+                            {ctx.money(ctx.lineAmount(line))}
                           </td>
                         ) : null}
                       </tr>
@@ -1578,13 +1600,21 @@ export function FolioLayout({ ctx }: LayoutProps) {
                     <dt className="text-slate-500">TVA ({ctx.vatRate}%)</dt>
                     <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.vatAmount)}</dd>
                   </div>
+                  {ctx.showTtc ? (
+                    <div className="flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
+                      <dt className="font-bold text-[#0f172a]">Total</dt>
+                      <dd className="font-bold tabular-nums text-[#0f172a]">
+                        {ctx.money(ctx.totalTtc)}
+                      </dd>
+                    </div>
+                  ) : null}
                   <div className="flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
-                    <dt className="font-bold text-[#0f172a]">Total</dt>
-                    <dd className="font-bold tabular-nums text-[#0f172a]">{ctx.money(ctx.netToPay)}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-6">
-                    <dt className="font-bold text-[#0f172a]">Solde dû</dt>
-                    <dd className="font-bold tabular-nums text-[#0f172a]">{ctx.money(ctx.netToPay)}</dd>
+                    <dt className="font-bold text-[#0f172a]">
+                      {ctx.showTtc ? "Solde dû" : ctx.dueLabel}
+                    </dt>
+                    <dd className="font-bold tabular-nums text-[#0f172a]">
+                      {ctx.money(ctx.dueAmount)}
+                    </dd>
                   </div>
                 </dl>
               </div>
@@ -1674,7 +1704,11 @@ export function RubyLayout({ ctx }: LayoutProps) {
                             {ctx.money(line.unitPriceHt)}
                           </td>
                           <td className="py-3 text-right font-medium tabular-nums text-slate-800">
-                            {ctx.money(ctx.lineTtc(line))}
+                            {ctx.money(
+                              ctx.showTtc
+                                ? ctx.lineAmount(line)
+                                : line.qty * line.unitPriceHt,
+                            )}
                           </td>
                         </>
                       ) : null}
@@ -1700,19 +1734,27 @@ export function RubyLayout({ ctx }: LayoutProps) {
                   <dt style={{ color: accent }}>TVA ({ctx.vatRate}%)</dt>
                   <dd className="tabular-nums text-slate-800">{ctx.money(ctx.vatAmount)}</dd>
                 </div>
-                <div className="flex items-baseline justify-between gap-6">
-                  <dt className="font-semibold" style={{ color: accent }}>
-                    Total
-                  </dt>
-                  <dd className="font-bold tabular-nums text-slate-800">{ctx.money(ctx.netToPay)}</dd>
-                </div>
+                {ctx.showTtc ? (
+                  <div className="flex items-baseline justify-between gap-6">
+                    <dt className="font-semibold" style={{ color: accent }}>
+                      Total
+                    </dt>
+                    <dd className="font-bold tabular-nums text-slate-800">
+                      {ctx.money(ctx.totalTtc)}
+                    </dd>
+                  </div>
+                ) : null}
               </dl>
               <div
                 className="mt-3 flex items-center justify-between gap-4 px-3 py-2.5 text-white"
                 style={{ backgroundColor: accent }}
               >
-                <span className="text-[0.85em] font-semibold">Solde dû</span>
-                <span className="text-[1.05em] font-bold tabular-nums">{ctx.money(ctx.netToPay)}</span>
+                <span className="text-[0.85em] font-semibold">
+                  {ctx.dueLabel === "Net HT" ? "Net HT" : "Solde dû"}
+                </span>
+                <span className="text-[1.05em] font-bold tabular-nums">
+                  {ctx.money(ctx.dueAmount)}
+                </span>
               </div>
             </div>
           </div>

@@ -60,6 +60,7 @@ export default function SettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | undefined>();
   const [cachetPreview, setCachetPreview] = useState<string | undefined>();
   const [designOpen, setDesignOpen] = useState(false);
+  const [designApplying, setDesignApplying] = useState(false);
 
   const [form, setForm] = useState({
     sellerName: "",
@@ -82,11 +83,39 @@ export default function SettingsPage() {
   const orgId = org?._id;
   const orgName = org?.name;
 
+  const emptySellerForm = (name: string) => ({
+    sellerName: name,
+    sellerActivity: "",
+    sellerAddress: "",
+    sellerPhone: "",
+    sellerWebsite: "",
+    sellerEmail: "",
+    sellerIce: "",
+    sellerIf: "",
+    sellerRc: "",
+    sellerCnss: "",
+    logoStorageId: undefined as Id<"_storage"> | undefined,
+    removeLogo: false,
+    cachetStorageId: undefined as Id<"_storage"> | undefined,
+    removeCachet: false,
+    documentTemplate: DEFAULT_DOCUMENT_TEMPLATE as DocumentTemplateId,
+    documentColor: DEFAULT_DOCUMENT_COLOR as DocumentColorId,
+  });
+
   useEffect(() => {
-    if (settings === undefined || !orgName) return;
+    if (!orgId || !orgName) return;
+
+    // Don't keep another org's identity on screen while settings load.
+    if (settings === undefined) {
+      setForm(emptySellerForm(orgName));
+      setLogoPreview(undefined);
+      setCachetPreview(undefined);
+      setSaved(false);
+      return;
+    }
 
     setForm({
-      sellerName: settings?.sellerName ?? orgName,
+      sellerName: settings?.sellerName?.trim() || orgName,
       sellerActivity: settings?.sellerActivity ?? "",
       sellerAddress: settings?.sellerAddress ?? "",
       sellerPhone: settings?.sellerPhone ?? "",
@@ -166,6 +195,37 @@ export default function SettingsPage() {
       }
     } finally {
       setPending(false);
+    }
+  }
+
+  async function handleApplyDesign(templateId: DocumentTemplateId, colorId: DocumentColorId) {
+    setDesignApplying(true);
+    setSaved(false);
+    try {
+      const nextForm = { ...form, documentTemplate: templateId, documentColor: colorId };
+      setForm(nextForm);
+      await upsert({
+        sellerName: nextForm.sellerName || orgName || "My company",
+        sellerActivity: nextForm.sellerActivity,
+        sellerAddress: nextForm.sellerAddress,
+        sellerPhone: nextForm.sellerPhone,
+        sellerWebsite: nextForm.sellerWebsite,
+        sellerEmail: nextForm.sellerEmail,
+        sellerIce: nextForm.sellerIce,
+        sellerIf: nextForm.sellerIf,
+        sellerRc: nextForm.sellerRc,
+        sellerCnss: nextForm.sellerCnss,
+        logoStorageId: nextForm.removeLogo ? undefined : nextForm.logoStorageId,
+        removeLogo: nextForm.removeLogo,
+        cachetStorageId: nextForm.removeCachet ? undefined : nextForm.cachetStorageId,
+        removeCachet: nextForm.removeCachet,
+        documentTemplate: templateId,
+        documentColor: colorId,
+      });
+      setSaved(true);
+      setDesignOpen(false);
+    } finally {
+      setDesignApplying(false);
     }
   }
 
@@ -300,7 +360,7 @@ export default function SettingsPage() {
                           onChange={(e) =>
                             setForm((f) => ({ ...f, sellerAddress: e.target.value }))
                           }
-                          placeholder="Ex. : EL WAKALA 01 BLOC F N°210 LAAYOUNE"
+                          placeholder="Ex. : 12 Avenue Hassan II, Casablanca"
                         />
                       </div>
                     </div>
@@ -317,7 +377,7 @@ export default function SettingsPage() {
                           onChange={(e) =>
                             setForm((f) => ({ ...f, sellerPhone: e.target.value }))
                           }
-                          placeholder="0766-018650"
+                          placeholder="Ex. : 05 22 00 00 00"
                         />
                       </div>
                       <div className="space-y-2">
@@ -329,7 +389,7 @@ export default function SettingsPage() {
                           onChange={(e) =>
                             setForm((f) => ({ ...f, sellerEmail: e.target.value }))
                           }
-                          placeholder="contact@societe.com"
+                          placeholder="Ex. : contact@societe.com"
                         />
                       </div>
                       <div className="space-y-2 sm:col-span-2">
@@ -340,7 +400,7 @@ export default function SettingsPage() {
                           onChange={(e) =>
                             setForm((f) => ({ ...f, sellerWebsite: e.target.value }))
                           }
-                          placeholder="www.batiplusmaroc.com"
+                          placeholder="Ex. : www.societe.ma"
                         />
                       </div>
                     </div>
@@ -355,7 +415,7 @@ export default function SettingsPage() {
                           id="sellerIce"
                           value={form.sellerIce}
                           onChange={(e) => setForm((f) => ({ ...f, sellerIce: e.target.value }))}
-                          placeholder="003509567000021"
+                          placeholder="Ex. : 000000000000000"
                         />
                       </div>
                       <div className="space-y-2">
@@ -364,7 +424,7 @@ export default function SettingsPage() {
                           id="sellerIf"
                           value={form.sellerIf}
                           onChange={(e) => setForm((f) => ({ ...f, sellerIf: e.target.value }))}
-                          placeholder="65953682"
+                          placeholder="Ex. : 00000000"
                         />
                       </div>
                       <div className="space-y-2">
@@ -373,7 +433,7 @@ export default function SettingsPage() {
                           id="sellerRc"
                           value={form.sellerRc}
                           onChange={(e) => setForm((f) => ({ ...f, sellerRc: e.target.value }))}
-                          placeholder="49913"
+                          placeholder="Ex. : 00000"
                         />
                       </div>
                       <div className="space-y-2">
@@ -382,7 +442,7 @@ export default function SettingsPage() {
                           id="sellerCnss"
                           value={form.sellerCnss}
                           onChange={(e) => setForm((f) => ({ ...f, sellerCnss: e.target.value }))}
-                          placeholder="5722763"
+                          placeholder="Ex. : 0000000"
                         />
                       </div>
                     </div>
@@ -439,10 +499,8 @@ export default function SettingsPage() {
         settings={previewSettings}
         initialTemplateId={form.documentTemplate}
         initialColorId={form.documentColor}
-        onApply={(templateId, colorId) => {
-          setForm((f) => ({ ...f, documentTemplate: templateId, documentColor: colorId }));
-          setDesignOpen(false);
-        }}
+        applying={designApplying}
+        onApply={handleApplyDesign}
       />
     </div>
   );

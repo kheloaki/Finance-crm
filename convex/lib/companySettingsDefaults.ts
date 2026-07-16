@@ -29,8 +29,8 @@ export async function ensureCompanySettings(
     sellerCnss: "",
     sellerLegal: "",
     sellerContact: "",
-    documentTemplate: "classic",
-    documentColor: "navy",
+    documentTemplate: "ruby",
+    documentColor: "crimson",
     updatedAt: now,
   });
 }

@@ -104,8 +104,8 @@ export const upsert = mutation({
       cachetStorageId: args.removeCachet
         ? undefined
         : args.cachetStorageId ?? existing?.cachetStorageId,
-      documentTemplate: args.documentTemplate ?? existing?.documentTemplate ?? "classic",
-      documentColor: args.documentColor ?? existing?.documentColor ?? "navy",
+      documentTemplate: args.documentTemplate ?? existing?.documentTemplate ?? "ruby",
+      documentColor: args.documentColor ?? existing?.documentColor ?? "crimson",
       updatedAt: now,
     };
 
