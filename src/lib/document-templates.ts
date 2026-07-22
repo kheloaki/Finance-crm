@@ -20,11 +20,12 @@ export const DOCUMENT_TEMPLATE_IDS = [
   "ledger",
   "folio",
   "ruby",
+  "quill",
 ] as const;
 
 export type DocumentTemplateId = (typeof DOCUMENT_TEMPLATE_IDS)[number];
 
-export const DEFAULT_DOCUMENT_TEMPLATE: DocumentTemplateId = "ruby";
+export const DEFAULT_DOCUMENT_TEMPLATE: DocumentTemplateId = "quill";
 
 export function normalizeDocumentTemplate(
   value: string | undefined | null,
@@ -202,6 +203,15 @@ export const DOCUMENT_TEMPLATES: DocumentTemplateMeta[] = [
     tags: ["Facture", "Accent", "Épuré"],
     layoutKind: "ruby",
     defaultColor: "crimson",
+  },
+  {
+    id: "quill",
+    label: "Quill",
+    description:
+      "Facture simple : logo et titre, client et dates, tableau foncé, notes à gauche et totaux à droite.",
+    tags: ["Facture", "Simple", "Épuré"],
+    layoutKind: "quill",
+    defaultColor: "navy",
   },
 ];
 

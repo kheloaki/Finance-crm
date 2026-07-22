@@ -16,8 +16,17 @@ export type DocumentEditState = {
   isSupplier: boolean;
   clientId: string;
   supplierId: string;
+  guestClientName: string;
+  guestSupplierName: string;
+  guestIce: string;
+  guestAddress: string;
+  guestCity: string;
+  onGuestIceChange: (v: string) => void;
+  onGuestAddressChange: (v: string) => void;
+  onGuestCityChange: (v: string) => void;
   onClientChange: (id: string) => void;
   onSupplierChange: (id: string) => void;
+  onCounterpartyChange: (next: { id: string; guestName: string }) => void;
   clients: Client[] | undefined;
   suppliers: Supplier[] | undefined;
   projectId: string;
@@ -37,6 +46,11 @@ export type DocumentEditState = {
   amountDisplay: import("@/lib/documents").AmountDisplay;
   settings?: CompanySettings | null;
   autoOpenCatalog?: boolean;
+  /** Whether the company cachet is shown on this document (export + preview). */
+  showCachet: boolean;
+  onShowCachetChange: (show: boolean) => void;
+  /** Open in-document company branding sheet (logo / cachet / design / seller / footer). */
+  onOpenBranding?: (focus?: "logo" | "cachet" | "design" | "seller" | "footer" | "locale") => void;
 };
 
 const DocumentEditContext = createContext<DocumentEditState | null>(null);

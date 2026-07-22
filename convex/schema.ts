@@ -44,6 +44,7 @@ export const documentTemplateValidator = v.union(
   v.literal("ledger"),
   v.literal("folio"),
   v.literal("ruby"),
+  v.literal("quill"),
 );
 
 export const documentColorValidator = v.union(
@@ -160,6 +161,8 @@ export default defineSchema({
     cachetStorageId: v.optional(v.id("_storage")),
     documentTemplate: v.optional(documentTemplateValidator),
     documentColor: v.optional(documentColorValidator),
+    currency: v.optional(v.string()),
+    documentLanguage: v.optional(v.string()),
     updatedAt: v.number(),
   }).index("by_org", ["organizationId"]),
 
@@ -173,6 +176,13 @@ export default defineSchema({
     dueDate: v.optional(v.string()),
     clientId: v.optional(v.id("clients")),
     supplierId: v.optional(v.id("suppliers")),
+    /** One-off name when no saved client/supplier is linked. */
+    guestClientName: v.optional(v.string()),
+    guestSupplierName: v.optional(v.string()),
+    /** Contact details for a one-off (unsaved) counterparty. */
+    guestIce: v.optional(v.string()),
+    guestAddress: v.optional(v.string()),
+    guestCity: v.optional(v.string()),
     vatRate: v.number(),
     discount: v.number(),
     deposit: v.number(),

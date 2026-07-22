@@ -49,7 +49,12 @@ async function enrichDocument(ctx: QueryCtx, doc: Doc<"documents">) {
     lines: sortedLines,
     client,
     supplier,
-    counterpartyName: client?.name ?? supplier?.name ?? "—",
+    counterpartyName:
+      client?.name ??
+      supplier?.name ??
+      doc.guestClientName?.trim() ??
+      doc.guestSupplierName?.trim() ??
+      "—",
     projectId: doc.folderId,
     projectName: folderName,
   };
@@ -276,6 +281,8 @@ type DocumentInput = {
   date: string;
   clientId?: Id<"clients">;
   supplierId?: Id<"suppliers">;
+  guestClientName?: string;
+  guestSupplierName?: string;
   lines: Array<{
     catalogItemId?: Id<"catalogItems">;
     reference: string;
@@ -290,9 +297,15 @@ type DocumentInput = {
 
 function validateCounterparty(input: DocumentInput) {
   if (isSupplierDocument(input.documentType)) {
-    if (!input.supplierId) throw new Error("Fournisseur requis pour un bon de commande");
+    const guest = input.guestSupplierName?.trim();
+    if (!input.supplierId && !guest) {
+      throw new Error("Fournisseur requis pour un bon de commande");
+    }
   } else {
-    if (!input.clientId) throw new Error("Client requis pour ce document");
+    const guest = input.guestClientName?.trim();
+    if (!input.clientId && !guest) {
+      throw new Error("Client requis pour ce document");
+    }
   }
 }
 
@@ -327,6 +340,11 @@ export const create = mutation({
     dueDate: v.optional(v.string()),
     clientId: v.optional(v.id("clients")),
     supplierId: v.optional(v.id("suppliers")),
+    guestClientName: v.optional(v.string()),
+    guestSupplierName: v.optional(v.string()),
+    guestIce: v.optional(v.string()),
+    guestAddress: v.optional(v.string()),
+    guestCity: v.optional(v.string()),
     vatRate: v.optional(v.number()),
     discount: v.optional(v.number()),
     deposit: v.optional(v.number()),
@@ -350,6 +368,14 @@ export const create = mutation({
     const totals = computeDocumentTotals(args.lines, vatRate, args.discount ?? 0, args.deposit ?? 0);
     const number = await resolveNumber(ctx, organizationId, args);
     const now = Date.now();
+    const guestClientName = args.clientId ? undefined : args.guestClientName?.trim() || undefined;
+    const guestSupplierName = args.supplierId
+      ? undefined
+      : args.guestSupplierName?.trim() || undefined;
+    const isGuest = !!(guestClientName || guestSupplierName);
+    const guestIce = isGuest ? args.guestIce?.trim() || undefined : undefined;
+    const guestAddress = isGuest ? args.guestAddress?.trim() || undefined : undefined;
+    const guestCity = isGuest ? args.guestCity?.trim() || undefined : undefined;
 
     const documentId = await ctx.db.insert("documents", {
       organizationId,
@@ -361,6 +387,11 @@ export const create = mutation({
       dueDate: args.dueDate,
       clientId: args.clientId,
       supplierId: args.supplierId,
+      guestClientName,
+      guestSupplierName,
+      guestIce,
+      guestAddress,
+      guestCity,
       vatRate,
       discount: args.discount ?? 0,
       deposit: args.deposit ?? 0,
@@ -389,6 +420,11 @@ export const update = mutation({
     dueDate: v.optional(v.string()),
     clientId: v.optional(v.id("clients")),
     supplierId: v.optional(v.id("suppliers")),
+    guestClientName: v.optional(v.string()),
+    guestSupplierName: v.optional(v.string()),
+    guestIce: v.optional(v.string()),
+    guestAddress: v.optional(v.string()),
+    guestCity: v.optional(v.string()),
     vatRate: v.optional(v.number()),
     discount: v.optional(v.number()),
     deposit: v.optional(v.number()),
@@ -420,11 +456,21 @@ export const update = mutation({
       date: args.date,
       clientId: args.clientId,
       supplierId: args.supplierId,
+      guestClientName: args.guestClientName,
+      guestSupplierName: args.guestSupplierName,
       lines: args.lines,
     });
 
     const vatRate = args.vatRate ?? doc.vatRate;
     const totals = computeDocumentTotals(args.lines, vatRate, args.discount ?? 0, args.deposit ?? 0);
+    const guestClientName = args.clientId ? undefined : args.guestClientName?.trim() || undefined;
+    const guestSupplierName = args.supplierId
+      ? undefined
+      : args.guestSupplierName?.trim() || undefined;
+    const isGuest = !!(guestClientName || guestSupplierName);
+    const guestIce = isGuest ? args.guestIce?.trim() || undefined : undefined;
+    const guestAddress = isGuest ? args.guestAddress?.trim() || undefined : undefined;
+    const guestCity = isGuest ? args.guestCity?.trim() || undefined : undefined;
 
     await ctx.db.patch(args.id, {
       ...(args.folderId !== undefined ? { folderId: args.folderId ?? undefined } : {}),
@@ -433,6 +479,11 @@ export const update = mutation({
       dueDate: args.dueDate,
       clientId: args.clientId,
       supplierId: args.supplierId,
+      guestClientName,
+      guestSupplierName,
+      guestIce,
+      guestAddress,
+      guestCity,
       vatRate,
       discount: args.discount ?? 0,
       deposit: args.deposit ?? 0,
@@ -518,6 +569,11 @@ export const duplicate = mutation({
       dueDate: doc.dueDate,
       clientId: doc.clientId,
       supplierId: doc.supplierId,
+      guestClientName: doc.guestClientName,
+      guestSupplierName: doc.guestSupplierName,
+      guestIce: doc.guestIce,
+      guestAddress: doc.guestAddress,
+      guestCity: doc.guestCity,
       vatRate: doc.vatRate,
       discount: doc.discount,
       deposit: doc.deposit,

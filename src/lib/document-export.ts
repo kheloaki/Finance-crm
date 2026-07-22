@@ -1,7 +1,14 @@
 import type { CompanySettings } from "@/lib/convex-types";
 import type { AmountDisplay, DocumentType, LineItem } from "@/lib/documents";
-import { DOCUMENT_LABELS, isDeliveryNote, normalizeAmountDisplay } from "@/lib/documents";
+import { isDeliveryNote } from "@/lib/documents";
+import { normalizeCurrency } from "@/lib/currencies";
 import { normalizeDocumentColor } from "@/lib/document-colors";
+import {
+  documentTypeLabel,
+  localeForLanguage,
+  normalizeDocumentLanguage,
+  t,
+} from "@/lib/document-i18n";
 import { normalizeDocumentTemplate, type DocumentTemplateId } from "@/lib/document-templates";
 import { resolveDocumentTheme, type DocumentTheme } from "@/lib/document-theme";
 import { computeDocumentTotals } from "@/lib/money";
@@ -46,6 +53,8 @@ export type DocumentExportInput = {
     | "cachetUrl"
     | "documentTemplate"
     | "documentColor"
+    | "currency"
+    | "documentLanguage"
   >;
 };
 
@@ -63,6 +72,8 @@ export type DocumentExportModel = DocumentExportInput & {
   totalTtc: number;
   netToPay: number;
   showTtc: boolean;
+  currency: string;
+  dueLabel: string;
 };
 
 export function buildDocumentExportModel(input: DocumentExportInput): DocumentExportModel {
@@ -72,19 +83,25 @@ export function buildDocumentExportModel(input: DocumentExportInput): DocumentEx
     input.discount,
     input.deposit,
   );
+  const lang = normalizeDocumentLanguage(input.settings.documentLanguage);
+  const locale = localeForLanguage(lang);
+  const showTtc = input.vatRate > 0;
 
   return {
     ...input,
     ...totals,
-    amountDisplay: normalizeAmountDisplay(input.amountDisplay),
-    showTtc: normalizeAmountDisplay(input.amountDisplay) === "ht_ttc",
+    amountDisplay: (showTtc ? "ht_ttc" : "ht") as AmountDisplay,
+    showTtc,
     templateId: normalizeDocumentTemplate(input.settings.documentTemplate),
     theme: resolveDocumentTheme(normalizeDocumentColor(input.settings.documentColor)),
     delivery: isDeliveryNote(input.documentType),
-    label: DOCUMENT_LABELS[input.documentType],
-    counterpartyLabel: input.isSupplier ? "Fournisseur" : "Client",
-    dateFormatted: input.date ? formatDate(input.date) : "—",
-    dueDateFormatted: input.dueDate ? formatDate(input.dueDate) : undefined,
+    label: documentTypeLabel(lang, input.documentType),
+    counterpartyLabel: t(lang, input.isSupplier ? "supplier" : "client"),
+    dateFormatted: input.date ? formatDate(input.date, locale) : "—",
+    dueDateFormatted: input.dueDate ? formatDate(input.dueDate, locale) : undefined,
     notes: input.notes ?? "",
+    currency: normalizeCurrency(input.settings.currency),
+    dueLabel:
+      showTtc || input.deposit > 0 ? t(lang, "netPayable") : t(lang, "netHt"),
   };
 }

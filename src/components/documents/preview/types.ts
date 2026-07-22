@@ -1,5 +1,6 @@
 import type { DocumentType, LineItem } from "@/lib/documents";
 import type { CompanySettings } from "@/lib/convex-types";
+import type { DocMsgKey, DocumentLanguageId } from "@/lib/document-i18n";
 import type { DocumentTemplateId } from "@/lib/document-templates";
 import type { DocumentTheme } from "@/lib/document-theme";
 
@@ -54,6 +55,10 @@ export type PreviewContext = {
   dueLabel: string;
   settings?: CompanySettings | null;
   previewMode?: boolean;
+  currency: string;
+  lang: DocumentLanguageId;
+  rtl: boolean;
+  t: (key: DocMsgKey) => string;
   money: (n: number) => string;
   /** @deprecated Prefer lineAmount — same as lineAmount when showTtc. */
   lineTtc: (line: LineItem) => number;

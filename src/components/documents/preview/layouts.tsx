@@ -18,16 +18,20 @@ import type { LayoutProps } from "./types";
 import {
   EditableLayoutFrame,
   LayoutAdjustments,
+  LayoutStaticTotals,
   LayoutCounterparty,
   LayoutLines,
   LayoutMetaBar,
   LayoutNotes,
   LayoutSettingsBanner,
+  QuillNotesAndTerms,
+  QuillTotals,
 } from "./editable-parts";
 import {
   FooterLegal,
   LinesSpreadsheet,
   LogoMark,
+  SellerFromBlock,
   linesTableClass,
   renderProductLines,
   TotalsBanner,
@@ -74,29 +78,45 @@ export function ClassicLayout({ ctx }: LayoutProps) {
 
       <LayoutLines
         ctx={ctx}
-        className={cn("mx-[5%] rounded border border-slate-200", linesTableClass)}
+        className={cn(
+          "mx-[5%] rounded border border-slate-200",
+          linesTableClass,
+        )}
         preview={
-          <LinesSpreadsheet ctx={ctx} stripeStyle={{ backgroundColor: ctx.theme.surface }} />
+          <LinesSpreadsheet
+            ctx={ctx}
+            stripeStyle={{ backgroundColor: ctx.theme.surface }}
+          />
         }
       />
 
       {!ctx.deliveryNote ? (
         <>
           <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
-          <div className="mx-[5%] mb-2 grid grid-cols-5 gap-0 overflow-hidden rounded border border-slate-200 text-[0.75em]">
-            <div className="col-span-2 border-r border-slate-200 p-2">
-              <p className="font-bold text-slate-500">TVA {ctx.vatRate}%</p>
-              <p className="tabular-nums">{ctx.money(ctx.vatAmount)}</p>
+          <LayoutStaticTotals>
+            <div className="mx-[5%] mb-2 grid grid-cols-5 gap-0 overflow-hidden rounded border border-slate-200 text-[0.75em]">
+              <div className="col-span-2 border-r border-slate-200 p-2">
+                <p className="font-bold text-slate-500">TVA {ctx.vatRate}%</p>
+                <p className="tabular-nums">{ctx.money(ctx.vatAmount)}</p>
+              </div>
+              <div
+                className="col-span-3 p-2 text-center"
+                style={primaryDarkBg(ctx)}
+              >
+                <p style={{ color: ctx.theme.accent }}>Net à payer</p>
+                <p className="text-[1.2em] font-bold tabular-nums">
+                  {ctx.money(ctx.dueAmount)}
+                </p>
+              </div>
             </div>
-            <div className="col-span-3 p-2 text-center" style={primaryDarkBg(ctx)}>
-              <p style={{ color: ctx.theme.accent }}>Net à payer</p>
-              <p className="text-[1.2em] font-bold tabular-nums">{ctx.money(ctx.dueAmount)}</p>
-            </div>
-          </div>
+          </LayoutStaticTotals>
         </>
       ) : null}
 
-      <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 rounded border border-slate-100 bg-slate-50 p-2" />
+      <LayoutNotes
+        ctx={ctx}
+        className="mx-[5%] mb-2 rounded border border-slate-100 bg-slate-50 p-2"
+      />
       <LayoutSettingsBanner ctx={ctx} />
       <footer className="mt-auto border-t bg-slate-50 px-[5%] py-2 text-center text-slate-400">
         <FooterLegal ctx={ctx} />
@@ -113,12 +133,19 @@ export function ModernLayout({ ctx }: LayoutProps) {
       <header className="shrink-0 px-[5%] py-4" style={bandStyle(ctx)}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <LogoMark ctx={ctx} className="mb-2 rounded-lg bg-white/20 ring-1 ring-white/30" />
+            <LogoMark
+              ctx={ctx}
+              className="mb-2 rounded-lg bg-white/20 ring-1 ring-white/30"
+            />
             <p className="text-[1.15em] font-bold">{ctx.sellerName}</p>
-            {ctx.sellerActivity ? <p className="text-[0.8em] opacity-80">{ctx.sellerActivity}</p> : null}
+            {ctx.sellerActivity ? (
+              <p className="text-[0.8em] opacity-80">{ctx.sellerActivity}</p>
+            ) : null}
           </div>
           <div className="text-right">
-            <p className="text-[1.4em] font-black uppercase tracking-tight">{ctx.label}</p>
+            <p className="text-[1.4em] font-black uppercase tracking-tight">
+              {ctx.label}
+            </p>
             <p className="text-[1.1em] font-semibold">#{ctx.number}</p>
             <p className="mt-1 text-[0.85em] opacity-80">{ctx.dateFormatted}</p>
           </div>
@@ -134,9 +161,15 @@ export function ModernLayout({ ctx }: LayoutProps) {
         >
           {(ctx.counterpartyName || "?")[0]?.toUpperCase()}
         </div>
-        <LayoutCounterparty ctx={ctx} className="min-w-0 flex-1" showIce={false} />
+        <LayoutCounterparty
+          ctx={ctx}
+          className="min-w-0 flex-1"
+          showIce={false}
+        />
         {ctx.counterpartyIce ? (
-          <span className="hidden text-[0.75em] text-slate-500 sm:block">ICE {ctx.counterpartyIce}</span>
+          <span className="hidden text-[0.75em] text-slate-500 sm:block">
+            ICE {ctx.counterpartyIce}
+          </span>
         ) : null}
       </div>
 
@@ -145,19 +178,32 @@ export function ModernLayout({ ctx }: LayoutProps) {
         className="mx-[5%] mb-2 max-h-[40%] shrink-0 space-y-1 overflow-y-auto"
         preview={
           products.length === 0 ? (
-            <p className="py-8 text-center italic text-slate-400">Aucune ligne</p>
+            <p className="py-8 text-center italic text-slate-400">
+              Aucune ligne
+            </p>
           ) : (
             products.map((line, i) => (
-              <div key={i} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2" style={lineCardStyle(ctx)}>
+              <div
+                key={i}
+                className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
+                style={lineCardStyle(ctx)}
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-[#0f172a]">{line.designation}</p>
+                  <p className="truncate font-semibold text-[#0f172a]">
+                    {line.designation}
+                  </p>
                   <p className="text-[0.75em] text-slate-500">
                     {line.qty} {line.unit}
-                    {!ctx.deliveryNote ? ` · HT ${ctx.money(line.unitPriceHt)}` : ""}
+                    {!ctx.deliveryNote
+                      ? ` · HT ${ctx.money(line.unitPriceHt)}`
+                      : ""}
                   </p>
                 </div>
                 {!ctx.deliveryNote ? (
-                  <p className="shrink-0 font-bold tabular-nums" style={accentText(ctx)}>
+                  <p
+                    className="shrink-0 font-bold tabular-nums"
+                    style={accentText(ctx)}
+                  >
                     {ctx.money(ctx.lineAmount(line))}
                   </p>
                 ) : null}
@@ -170,15 +216,24 @@ export function ModernLayout({ ctx }: LayoutProps) {
       {!ctx.deliveryNote ? (
         <>
           <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
-          <div className="mx-[5%] mb-3">
-            <TotalsBanner ctx={ctx} style={gradientBannerStyle(ctx)} dark />
-          </div>
+          <LayoutStaticTotals>
+            <div className="mx-[5%] mb-3">
+              <TotalsBanner ctx={ctx} style={gradientBannerStyle(ctx)} dark />
+            </div>
+          </LayoutStaticTotals>
         </>
       ) : null}
 
-      <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 rounded-lg p-2" style={surfaceStyle(ctx)} />
+      <LayoutNotes
+        ctx={ctx}
+        className="mx-[5%] mb-2 rounded-lg p-2"
+        style={surfaceStyle(ctx)}
+      />
       <LayoutSettingsBanner ctx={ctx} />
-      <footer className="mt-auto px-[5%] py-2 text-center text-slate-500" style={{ backgroundColor: ctx.theme.surface }}>
+      <footer
+        className="mt-auto px-[5%] py-2 text-center text-slate-500"
+        style={{ backgroundColor: ctx.theme.surface }}
+      >
         <FooterLegal ctx={ctx} />
       </footer>
     </EditableLayoutFrame>
@@ -190,12 +245,17 @@ export function MinimalLayout({ ctx }: LayoutProps) {
   const products = renderProductLines(ctx);
   return (
     <EditableLayoutFrame ctx={ctx}>
-      <header className="border-b-2 px-[6%] py-4" style={{ borderColor: ctx.theme.primaryDark }}>
+      <header
+        className="border-b-2 px-[6%] py-4"
+        style={{ borderColor: ctx.theme.primaryDark }}
+      >
         <div className="flex justify-between gap-4">
           <div className="flex items-start gap-2">
             <LogoMark ctx={ctx} />
             <div>
-              <p className="text-[1.15em] font-bold uppercase tracking-[0.15em]">{ctx.sellerName}</p>
+              <p className="text-[1.15em] font-bold uppercase tracking-[0.15em]">
+                {ctx.sellerName}
+              </p>
               {ctx.sellerActivity ? (
                 <p className="mt-1 text-[0.75em] uppercase tracking-widest text-neutral-500">
                   {ctx.sellerActivity}
@@ -222,57 +282,71 @@ export function MinimalLayout({ ctx }: LayoutProps) {
         />
       </section>
 
-      <div className="mx-[6%] shrink-0 border-t" style={{ borderColor: ctx.theme.primaryDark }}>
+      <div
+        className="mx-[6%] shrink-0 border-t"
+        style={{ borderColor: ctx.theme.primaryDark }}
+      >
         <LayoutLines
           ctx={ctx}
           preview={
-          products.length === 0 ? (
-            <p className="py-6 text-center italic text-neutral-400">—</p>
-          ) : (
-            products.map((line, i) => (
-              <div key={i} className="flex items-baseline justify-between gap-4 border-b border-neutral-200 py-2.5">
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{line.designation}</p>
+            products.length === 0 ? (
+              <p className="py-6 text-center italic text-neutral-400">—</p>
+            ) : (
+              products.map((line, i) => (
+                <div
+                  key={i}
+                  className="flex items-baseline justify-between gap-4 border-b border-neutral-200 py-2.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{line.designation}</p>
+                    {!ctx.deliveryNote ? (
+                      <p className="text-[0.75em] text-neutral-400">
+                        {line.qty} × {ctx.money(line.unitPriceHt)} HT
+                      </p>
+                    ) : (
+                      <p className="text-[0.75em] text-neutral-400">
+                        {line.qty} {line.unit}
+                      </p>
+                    )}
+                  </div>
                   {!ctx.deliveryNote ? (
-                    <p className="text-[0.75em] text-neutral-400">
-                      {line.qty} × {ctx.money(line.unitPriceHt)} HT
+                    <p className="shrink-0 tabular-nums font-medium">
+                      {ctx.money(ctx.lineAmount(line))}
                     </p>
-                  ) : (
-                    <p className="text-[0.75em] text-neutral-400">
-                      {line.qty} {line.unit}
-                    </p>
-                  )}
+                  ) : null}
                 </div>
-                {!ctx.deliveryNote ? (
-                  <p className="shrink-0 tabular-nums font-medium">{ctx.money(ctx.lineAmount(line))}</p>
-                ) : null}
-              </div>
-            ))
-          )
-        }
+              ))
+            )
+          }
         />
       </div>
 
       {!ctx.deliveryNote ? (
         <>
           <LayoutAdjustments ctx={ctx} className="mx-[6%]" />
-          <dl className="mx-[6%] mb-4 space-y-1 text-right text-[0.85em]">
-            <div className="flex justify-end gap-8">
-              <dt className="text-neutral-500">Total HT</dt>
-              <dd className="w-20 tabular-nums">{ctx.money(ctx.totalHt)}</dd>
-            </div>
-            <div className="flex justify-end gap-8">
-              <dt className="text-neutral-500">TVA</dt>
-              <dd className="w-20 tabular-nums">{ctx.money(ctx.vatAmount)}</dd>
-            </div>
-            <div
-              className="flex justify-end gap-8 border-t-2 pt-2 font-bold"
-              style={{ borderColor: ctx.theme.primaryDark }}
-            >
-              <dt>Net à payer</dt>
-              <dd className="w-20 tabular-nums">{ctx.money(ctx.dueAmount)}</dd>
-            </div>
-          </dl>
+          <LayoutStaticTotals>
+            <dl className="mx-[6%] mb-4 space-y-1 text-right text-[0.85em]">
+              <div className="flex justify-end gap-8">
+                <dt className="text-neutral-500">Total HT</dt>
+                <dd className="w-20 tabular-nums">{ctx.money(ctx.totalHt)}</dd>
+              </div>
+              <div className="flex justify-end gap-8">
+                <dt className="text-neutral-500">TVA</dt>
+                <dd className="w-20 tabular-nums">
+                  {ctx.money(ctx.vatAmount)}
+                </dd>
+              </div>
+              <div
+                className="flex justify-end gap-8 border-t-2 pt-2 font-bold"
+                style={{ borderColor: ctx.theme.primaryDark }}
+              >
+                <dt>Net à payer</dt>
+                <dd className="w-20 tabular-nums">
+                  {ctx.money(ctx.dueAmount)}
+                </dd>
+              </div>
+            </dl>
+          </LayoutStaticTotals>
         </>
       ) : null}
 
@@ -300,11 +374,19 @@ export function ExecutiveLayout({ ctx }: LayoutProps) {
       <header className="shrink-0 px-[5%] py-5" style={primaryDarkBg(ctx)}>
         <div className="flex items-end justify-between">
           <div>
-            <LogoMark ctx={ctx} className="mb-2 rounded-lg ring-1 ring-white/20" />
-            <p className="text-[1em] font-semibold tracking-wide">{ctx.sellerName}</p>
+            <LogoMark
+              ctx={ctx}
+              className="mb-2 rounded-lg ring-1 ring-white/20"
+            />
+            <p className="text-[1em] font-semibold tracking-wide">
+              {ctx.sellerName}
+            </p>
           </div>
           <div className="text-right">
-            <p className="text-[1.6em] font-black leading-none" style={{ color: ctx.theme.accent }}>
+            <p
+              className="text-[1.6em] font-black leading-none"
+              style={{ color: ctx.theme.accent }}
+            >
               {ctx.label}
             </p>
             <p className="mt-1 text-[0.9em] opacity-70">Réf. {ctx.number}</p>
@@ -313,7 +395,11 @@ export function ExecutiveLayout({ ctx }: LayoutProps) {
       </header>
 
       <div className="grid grid-cols-2 gap-3 px-[5%] py-3">
-        <LayoutCounterparty ctx={ctx} className="rounded-lg border p-3" style={clientBoxStyle(ctx)} />
+        <LayoutCounterparty
+          ctx={ctx}
+          className="rounded-lg border p-3"
+          style={clientBoxStyle(ctx)}
+        />
         <LayoutMetaBar ctx={ctx} variant="inline" />
       </div>
 
@@ -323,16 +409,24 @@ export function ExecutiveLayout({ ctx }: LayoutProps) {
         preview={
           <table className="w-full text-[0.8em]">
             <thead>
-              <tr className="border-b-2 text-left text-[0.7em] uppercase tracking-wider" style={{ borderColor: ctx.theme.primaryDark }}>
+              <tr
+                className="border-b-2 text-left text-[0.7em] uppercase tracking-wider"
+                style={{ borderColor: ctx.theme.primaryDark }}
+              >
                 <th className="py-1.5">Description</th>
                 <th className="py-1.5 text-right">Qté</th>
-                {!ctx.deliveryNote ? <th className="py-1.5 text-right">Montant</th> : null}
+                {!ctx.deliveryNote ? (
+                  <th className="py-1.5 text-right">Montant</th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="py-6 text-center italic text-slate-400">
+                  <td
+                    colSpan={3}
+                    className="py-6 text-center italic text-slate-400"
+                  >
                     Aucune ligne
                   </td>
                 </tr>
@@ -361,19 +455,34 @@ export function ExecutiveLayout({ ctx }: LayoutProps) {
       {!ctx.deliveryNote ? (
         <>
           <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
-          <div className="mx-[5%] mb-3 rounded-xl py-4 text-center" style={primaryDarkBg(ctx)}>
-            <p className="text-[0.7em] uppercase tracking-[0.2em]" style={{ color: ctx.theme.accent }}>
-              Net à payer
-            </p>
-            <p className="text-[1.8em] font-black tabular-nums" style={{ color: ctx.theme.accent }}>
-              {ctx.money(ctx.dueAmount)} <span className="text-[0.5em]">MAD</span>
-            </p>
-          </div>
+          <LayoutStaticTotals>
+            <div
+              className="mx-[5%] mb-3 rounded-xl py-4 text-center"
+              style={primaryDarkBg(ctx)}
+            >
+              <p
+                className="text-[0.7em] uppercase tracking-[0.2em]"
+                style={{ color: ctx.theme.accent }}
+              >
+                Net à payer
+              </p>
+              <p
+                className="text-[1.8em] font-black tabular-nums"
+                style={{ color: ctx.theme.accent }}
+              >
+                {ctx.money(ctx.dueAmount)}{" "}
+                <span className="text-[0.5em]">MAD</span>
+              </p>
+            </div>
+          </LayoutStaticTotals>
         </>
       ) : null}
 
       <LayoutSettingsBanner ctx={ctx} />
-      <footer className="mt-auto px-[5%] py-2 text-center text-neutral-500" style={primaryDarkBg(ctx)}>
+      <footer
+        className="mt-auto px-[5%] py-2 text-center text-neutral-500"
+        style={primaryDarkBg(ctx)}
+      >
         <FooterLegal ctx={ctx} />
       </footer>
     </EditableLayoutFrame>
@@ -391,9 +500,13 @@ export function CorporateLayout({ ctx }: LayoutProps) {
             <LogoMark ctx={ctx} />
             {!ctx.logoUrl ? (
               <div className="mt-2">
-                <p className="text-[1.05em] font-bold text-[#0f172a]">{ctx.sellerName}</p>
+                <p className="text-[1.05em] font-bold text-[#0f172a]">
+                  {ctx.sellerName}
+                </p>
                 {ctx.sellerActivity ? (
-                  <p className="text-[0.8em] text-slate-500">{ctx.sellerActivity}</p>
+                  <p className="text-[0.8em] text-slate-500">
+                    {ctx.sellerActivity}
+                  </p>
                 ) : null}
               </div>
             ) : null}
@@ -433,24 +546,32 @@ export function CorporateLayout({ ctx }: LayoutProps) {
         />
 
         {!ctx.deliveryNote ? (
-          <div className="mb-6 ml-auto w-full max-w-[240px] pt-2">
-            <LayoutAdjustments ctx={ctx} variant="stack" className="text-right" />
-            <dl className="space-y-1.5 text-[0.85em]">
-              <div className="flex items-baseline justify-between gap-6">
-                <dt className="text-slate-500">Total HT</dt>
-                <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.totalHt)}</dd>
-              </div>
-              <div className="flex items-baseline justify-between gap-6">
-                <dt className="text-slate-500">TVA ({ctx.vatRate}%)</dt>
-                <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.vatAmount)}</dd>
-              </div>
-              <div className="mt-1 flex items-baseline justify-between gap-6 border-t border-slate-200 bg-slate-50 px-2.5 py-2">
-                <dt className="font-bold uppercase tracking-wide text-slate-800">Total</dt>
-                <dd className="text-[1.15em] font-bold tabular-nums text-[#0f172a]">
-                  {ctx.money(ctx.dueAmount)}
-                </dd>
-              </div>
-            </dl>
+          <div className="mb-6 ml-auto w-full max-w-[320px] pt-2">
+            <LayoutAdjustments ctx={ctx} />
+            <LayoutStaticTotals>
+              <dl className="space-y-1.5 text-[0.85em]">
+                <div className="flex items-baseline justify-between gap-6">
+                  <dt className="text-slate-500">Total HT</dt>
+                  <dd className="tabular-nums text-[#0f172a]">
+                    {ctx.money(ctx.totalHt)}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-6">
+                  <dt className="text-slate-500">TVA ({ctx.vatRate}%)</dt>
+                  <dd className="tabular-nums text-[#0f172a]">
+                    {ctx.money(ctx.vatAmount)}
+                  </dd>
+                </div>
+                <div className="mt-1 flex items-baseline justify-between gap-6 border-t border-slate-200 bg-slate-50 px-2.5 py-2">
+                  <dt className="font-bold uppercase tracking-wide text-slate-800">
+                    Total
+                  </dt>
+                  <dd className="text-[1.15em] font-bold tabular-nums text-[#0f172a]">
+                    {ctx.money(ctx.dueAmount)}
+                  </dd>
+                </div>
+              </dl>
+            </LayoutStaticTotals>
           </div>
         ) : null}
 
@@ -469,8 +590,16 @@ export function FreshLayout({ ctx }: LayoutProps) {
   const products = renderProductLines(ctx);
   return (
     <EditableLayoutFrame ctx={ctx}>
-      <div className="flex h-full flex-col p-3" style={{ background: `linear-gradient(to bottom, ${ctx.theme.surface}, white)` }}>
-        <div className="mb-2 rounded-2xl bg-white p-3 shadow-sm ring-1" style={{ borderColor: ctx.theme.surfaceBorder }}>
+      <div
+        className="flex h-full flex-col p-3"
+        style={{
+          background: `linear-gradient(to bottom, ${ctx.theme.surface}, white)`,
+        }}
+      >
+        <div
+          className="mb-2 rounded-2xl bg-white p-3 shadow-sm ring-1"
+          style={{ borderColor: ctx.theme.surfaceBorder }}
+        >
           <div className="flex items-center gap-2">
             <LogoMark ctx={ctx} className="rounded-xl" />
             <div>
@@ -481,7 +610,10 @@ export function FreshLayout({ ctx }: LayoutProps) {
                 {ctx.sellerActivity}
               </p>
             </div>
-            <div className="ml-auto rounded-full px-3 py-1 text-[0.75em] font-bold" style={surfaceStyle(ctx)}>
+            <div
+              className="ml-auto rounded-full px-3 py-1 text-[0.75em] font-bold"
+              style={surfaceStyle(ctx)}
+            >
               {ctx.label}
             </div>
           </div>
@@ -513,10 +645,19 @@ export function FreshLayout({ ctx }: LayoutProps) {
               </p>
             ) : (
               products.map((line, i) => (
-                <div key={i} className="flex justify-between rounded-2xl bg-white px-3 py-2 shadow-sm ring-1" style={lineCardStyle(ctx)}>
-                  <span className="truncate font-medium">{line.designation}</span>
+                <div
+                  key={i}
+                  className="flex justify-between rounded-2xl bg-white px-3 py-2 shadow-sm ring-1"
+                  style={lineCardStyle(ctx)}
+                >
+                  <span className="truncate font-medium">
+                    {line.designation}
+                  </span>
                   {!ctx.deliveryNote ? (
-                    <span className="ml-2 shrink-0 font-bold tabular-nums" style={accentText(ctx)}>
+                    <span
+                      className="ml-2 shrink-0 font-bold tabular-nums"
+                      style={accentText(ctx)}
+                    >
                       {ctx.money(ctx.lineAmount(line))}
                     </span>
                   ) : (
@@ -533,22 +674,30 @@ export function FreshLayout({ ctx }: LayoutProps) {
         {!ctx.deliveryNote ? (
           <>
             <LayoutAdjustments ctx={ctx} className="mb-2" />
-            <div className="mb-2 rounded-2xl p-4 text-center shadow-md" style={gradientBannerStyle(ctx)}>
-              <p className="text-[0.7em] uppercase opacity-90">
-                {ctx.showTtc ? "Total TTC" : "Total HT"}
-              </p>
-              <p className="text-[1.4em] font-black tabular-nums">
-                {ctx.money(ctx.showTtc ? ctx.totalTtc : ctx.totalHt)}
-              </p>
-              <p className="mt-1 text-[0.85em]">
-                {ctx.dueLabel} : {ctx.money(ctx.dueAmount)} MAD
-              </p>
-            </div>
+            <LayoutStaticTotals>
+              <div
+                className="mb-2 rounded-2xl p-4 text-center shadow-md"
+                style={gradientBannerStyle(ctx)}
+              >
+                <p className="text-[0.7em] uppercase opacity-90">
+                  {ctx.showTtc ? "Total TTC" : "Total HT"}
+                </p>
+                <p className="text-[1.4em] font-black tabular-nums">
+                  {ctx.money(ctx.showTtc ? ctx.totalTtc : ctx.totalHt)}
+                </p>
+                <p className="mt-1 text-[0.85em]">
+                  {ctx.dueLabel} : {ctx.money(ctx.dueAmount)} MAD
+                </p>
+              </div>
+            </LayoutStaticTotals>
           </>
         ) : null}
 
         <LayoutSettingsBanner ctx={ctx} />
-        <footer className="text-center text-[0.75em]" style={accentMutedText(ctx)}>
+        <footer
+          className="text-center text-[0.75em]"
+          style={accentMutedText(ctx)}
+        >
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
@@ -561,15 +710,27 @@ export function WarmLayout({ ctx }: LayoutProps) {
   const products = renderProductLines(ctx);
   return (
     <EditableLayoutFrame ctx={ctx}>
-      <div className="flex h-full flex-col p-4" style={{ backgroundColor: ctx.theme.primaryMuted }}>
-        <div className="flex items-start gap-2 border-b-4 pb-3" style={{ borderColor: ctx.theme.primary }}>
+      <div
+        className="flex h-full flex-col p-4"
+        style={{ backgroundColor: ctx.theme.primaryMuted }}
+      >
+        <div
+          className="flex items-start gap-2 border-b-4 pb-3"
+          style={{ borderColor: ctx.theme.primary }}
+        >
           <LogoMark ctx={ctx} />
           <div>
-            <p className="font-serif text-[1.4em] font-bold" style={{ color: ctx.theme.primaryDark }}>
+            <p
+              className="font-serif text-[1.4em] font-bold"
+              style={{ color: ctx.theme.primaryDark }}
+            >
               {ctx.sellerName}
             </p>
             {ctx.sellerActivity ? (
-              <p className="font-serif text-[0.85em] italic" style={accentMutedText(ctx)}>
+              <p
+                className="font-serif text-[0.85em] italic"
+                style={accentMutedText(ctx)}
+              >
                 {ctx.sellerActivity}
               </p>
             ) : null}
@@ -577,7 +738,10 @@ export function WarmLayout({ ctx }: LayoutProps) {
         </div>
 
         <div className="mt-3 flex justify-between text-[0.8em]">
-          <p className="font-bold uppercase" style={{ color: ctx.theme.primaryDark }}>
+          <p
+            className="font-bold uppercase"
+            style={{ color: ctx.theme.primaryDark }}
+          >
             {ctx.label}
           </p>
           <p style={accentText(ctx)}>
@@ -607,16 +771,28 @@ export function WarmLayout({ ctx }: LayoutProps) {
               </p>
             ) : (
               products.map((line, i) => (
-                <div key={i} className="border-b pb-2" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                  <p className="font-serif text-[1em] font-semibold" style={{ color: ctx.theme.primaryDark }}>
+                <div
+                  key={i}
+                  className="border-b pb-2"
+                  style={{ borderColor: ctx.theme.surfaceBorder }}
+                >
+                  <p
+                    className="font-serif text-[1em] font-semibold"
+                    style={{ color: ctx.theme.primaryDark }}
+                  >
                     {line.designation}
                   </p>
-                  <div className="mt-0.5 flex justify-between text-[0.8em]" style={accentMutedText(ctx)}>
+                  <div
+                    className="mt-0.5 flex justify-between text-[0.8em]"
+                    style={accentMutedText(ctx)}
+                  >
                     <span>
                       {line.qty} {line.unit}
                     </span>
                     {!ctx.deliveryNote ? (
-                      <span className="font-bold tabular-nums">{ctx.money(ctx.lineAmount(line))}</span>
+                      <span className="font-bold tabular-nums">
+                        {ctx.money(ctx.lineAmount(line))}
+                      </span>
                     ) : null}
                   </div>
                 </div>
@@ -628,24 +804,33 @@ export function WarmLayout({ ctx }: LayoutProps) {
         {!ctx.deliveryNote ? (
           <>
             <LayoutAdjustments ctx={ctx} className="mb-2" />
-            <div className="flex items-center justify-end gap-3">
-              <div className="text-right text-[0.85em]">
-                <p>
-                  {ctx.showTtc ? "TTC" : "HT"} {ctx.money(ctx.showTtc ? ctx.totalTtc : ctx.totalHt)}
-                </p>
+            <LayoutStaticTotals>
+              <div className="flex items-center justify-end gap-3">
+                <div className="text-right text-[0.85em]">
+                  <p>
+                    {ctx.showTtc ? "TTC" : "HT"}{" "}
+                    {ctx.money(ctx.showTtc ? ctx.totalTtc : ctx.totalHt)}
+                  </p>
+                </div>
+                <div
+                  className="flex h-16 w-16 flex-col items-center justify-center rounded-full shadow-lg"
+                  style={primaryBg(ctx)}
+                >
+                  <span className="text-[0.55em] uppercase">Net</span>
+                  <span className="text-[0.75em] font-bold tabular-nums leading-none">
+                    {ctx.money(ctx.dueAmount)}
+                  </span>
+                </div>
               </div>
-              <div className="flex h-16 w-16 flex-col items-center justify-center rounded-full shadow-lg" style={primaryBg(ctx)}>
-                <span className="text-[0.55em] uppercase">Net</span>
-                <span className="text-[0.75em] font-bold tabular-nums leading-none">
-                  {ctx.money(ctx.dueAmount)}
-                </span>
-              </div>
-            </div>
+            </LayoutStaticTotals>
           </>
         ) : null}
 
         <LayoutSettingsBanner ctx={ctx} />
-        <footer className="mt-auto pt-2 text-center text-[0.75em]" style={accentMutedText(ctx)}>
+        <footer
+          className="mt-auto pt-2 text-center text-[0.75em]"
+          style={accentMutedText(ctx)}
+        >
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
@@ -659,7 +844,10 @@ export function OceanLayout({ ctx }: LayoutProps) {
     <EditableLayoutFrame ctx={ctx}>
       <div className="flex min-h-0 shrink-0 flex-col">
         <div className="flex shrink-0">
-          <aside className="flex w-[14%] shrink-0 flex-col items-center py-4" style={bandStyleVertical(ctx)}>
+          <aside
+            className="flex w-[14%] shrink-0 flex-col items-center py-4"
+            style={bandStyleVertical(ctx)}
+          >
             <p
               className="text-[0.65em] font-black uppercase tracking-widest [writing-mode:vertical-rl] rotate-180"
               style={{ letterSpacing: "0.2em" }}
@@ -671,16 +859,24 @@ export function OceanLayout({ ctx }: LayoutProps) {
           <div className="relative min-w-0 flex-1 p-3">
             <div
               className="absolute right-3 top-3 flex h-14 w-14 flex-col items-center justify-center rounded-full shadow-lg ring-4"
-              style={{ ...primaryBg(ctx), boxShadow: `0 0 0 4px ${ctx.theme.primaryMuted}` }}
+              style={{
+                ...primaryBg(ctx),
+                boxShadow: `0 0 0 4px ${ctx.theme.primaryMuted}`,
+              }}
             >
               <span className="text-[0.5em] uppercase opacity-80">N°</span>
-              <span className="text-[0.65em] font-bold leading-tight">{ctx.number.split("/")[0]}</span>
+              <span className="text-[0.65em] font-bold leading-tight">
+                {ctx.number.split("/")[0]}
+              </span>
             </div>
 
             <div className="flex items-center gap-2 pr-16">
               <LogoMark ctx={ctx} />
               <div>
-                <p className="text-[1em] font-bold" style={{ color: ctx.theme.primaryDark }}>
+                <p
+                  className="text-[1em] font-bold"
+                  style={{ color: ctx.theme.primaryDark }}
+                >
                   {ctx.sellerName}
                 </p>
                 <p className="text-[0.75em]" style={accentText(ctx)}>
@@ -703,35 +899,49 @@ export function OceanLayout({ ctx }: LayoutProps) {
         <LayoutLines
           ctx={ctx}
           className={cn("mx-[5%]", linesTableClass)}
-          preview={<LinesSpreadsheet ctx={ctx} headStyle={tableHeadStyle(ctx)} />}
+          preview={
+            <LinesSpreadsheet ctx={ctx} headStyle={tableHeadStyle(ctx)} />
+          }
         />
 
         {!ctx.deliveryNote ? (
           <>
             <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
-            <div className="mx-[5%] mb-2 ml-auto w-[55%] overflow-hidden rounded text-[0.8em]">
-              <div className="flex justify-between border-b border-neutral-200 py-1">
-                <span>Sous-total HT</span>
-                <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+            <LayoutStaticTotals>
+              <div className="mx-[5%] mb-2 ml-auto w-[55%] overflow-hidden rounded text-[0.8em]">
+                <div className="flex justify-between border-b border-neutral-200 py-1">
+                  <span>Sous-total HT</span>
+                  <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+                </div>
+                <div className="flex justify-between border-b border-neutral-200 py-1">
+                  <span>TVA {ctx.vatRate}%</span>
+                  <span className="tabular-nums">
+                    {ctx.money(ctx.vatAmount)}
+                  </span>
+                </div>
+                <div
+                  className="flex justify-between px-2 py-1.5 font-bold text-white"
+                  style={{ ...primaryBg(ctx), borderRadius: "0 0 4px 4px" }}
+                >
+                  <span>{ctx.showTtc ? "Total TTC" : "Total HT"}</span>
+                  <span className="tabular-nums">
+                    {ctx.money(ctx.dueAmount)} MAD
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between border-b border-neutral-200 py-1">
-                <span>TVA {ctx.vatRate}%</span>
-                <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
-              </div>
-              <div
-                className="flex justify-between px-2 py-1.5 font-bold text-white"
-                style={{ ...primaryBg(ctx), borderRadius: "0 0 4px 4px" }}
-              >
-                <span>{ctx.showTtc ? "Total TTC" : "Total HT"}</span>
-                <span className="tabular-nums">{ctx.money(ctx.dueAmount)} MAD</span>
-              </div>
-            </div>
+            </LayoutStaticTotals>
           </>
         ) : null}
 
-        <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 rounded border border-slate-100 bg-slate-50 p-2" />
+        <LayoutNotes
+          ctx={ctx}
+          className="mx-[5%] mb-2 rounded border border-slate-100 bg-slate-50 p-2"
+        />
         <LayoutSettingsBanner ctx={ctx} />
-        <footer className="mt-auto shrink-0 px-[5%] py-2 text-center text-[0.7em]" style={accentMutedText(ctx)}>
+        <footer
+          className="mt-auto shrink-0 px-[5%] py-2 text-center text-[0.7em]"
+          style={accentMutedText(ctx)}
+        >
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
@@ -761,7 +971,10 @@ export function SlateLayout({ ctx }: LayoutProps) {
 
         <LayoutMetaBar ctx={ctx} className="my-2" />
 
-        <div className="my-4 border-l-4 pl-3" style={{ borderColor: ctx.theme.primary }}>
+        <div
+          className="my-4 border-l-4 pl-3"
+          style={{ borderColor: ctx.theme.primary }}
+        >
           <LayoutCounterparty
             ctx={ctx}
             labelClassName="text-[0.7em] font-bold uppercase tracking-wider text-slate-500"
@@ -778,7 +991,9 @@ export function SlateLayout({ ctx }: LayoutProps) {
           preview={
             <ol className="list-decimal space-y-2 pl-4">
               {products.length === 0 ? (
-                <li className="list-none italic text-slate-400">Aucune prestation listée.</li>
+                <li className="list-none italic text-slate-400">
+                  Aucune prestation listée.
+                </li>
               ) : (
                 products.map((line, i) => (
                   <li key={i} className="pl-1">
@@ -800,17 +1015,25 @@ export function SlateLayout({ ctx }: LayoutProps) {
         {!ctx.deliveryNote ? (
           <>
             <LayoutAdjustments ctx={ctx} className="mb-2" />
-            <p className="mb-3 text-[0.9em]">
-              Montant total dû :{" "}
-              <strong className="text-[1.1em] tabular-nums" style={{ color: ctx.theme.primaryDark }}>
-                {ctx.money(ctx.dueAmount)} MAD
-              </strong>
-              {ctx.showTtc ? " TTC." : " HT."}
-            </p>
+            <LayoutStaticTotals>
+              <p className="mb-3 text-[0.9em]">
+                Montant total dû :{" "}
+                <strong
+                  className="text-[1.1em] tabular-nums"
+                  style={{ color: ctx.theme.primaryDark }}
+                >
+                  {ctx.money(ctx.dueAmount)} MAD
+                </strong>
+                {ctx.showTtc ? " TTC." : " HT."}
+              </p>
+            </LayoutStaticTotals>
           </>
         ) : null}
 
-        <LayoutNotes ctx={ctx} className="mb-2 text-[0.85em] italic text-slate-600" />
+        <LayoutNotes
+          ctx={ctx}
+          className="mb-2 text-[0.85em] italic text-slate-600"
+        />
         <LayoutSettingsBanner ctx={ctx} />
         <footer className="mt-auto border-t border-slate-200 pt-2 text-center text-[0.75em] text-slate-400">
           <FooterLegal ctx={ctx} />
@@ -829,38 +1052,68 @@ export function RoyalLayout({ ctx }: LayoutProps) {
         className="relative flex h-full flex-col border m-2 p-3"
         style={{ borderColor: ctx.theme.surfaceBorder }}
       >
-        <div className="pointer-events-none absolute left-1 top-1" style={accentText(ctx)}>
+        <div
+          className="pointer-events-none absolute left-1 top-1"
+          style={accentText(ctx)}
+        >
           ◆
         </div>
-        <div className="pointer-events-none absolute right-1 top-1" style={accentText(ctx)}>
+        <div
+          className="pointer-events-none absolute right-1 top-1"
+          style={accentText(ctx)}
+        >
           ◆
         </div>
-        <div className="pointer-events-none absolute bottom-1 left-1" style={accentText(ctx)}>
+        <div
+          className="pointer-events-none absolute bottom-1 left-1"
+          style={accentText(ctx)}
+        >
           ◆
         </div>
-        <div className="pointer-events-none absolute bottom-1 right-1" style={accentText(ctx)}>
+        <div
+          className="pointer-events-none absolute bottom-1 right-1"
+          style={accentText(ctx)}
+        >
           ◆
         </div>
 
-        <header className="shrink-0 border-b pb-3 pt-2 text-center" style={{ borderColor: ctx.theme.surfaceBorder }}>
+        <header
+          className="shrink-0 border-b pb-3 pt-2 text-center"
+          style={{ borderColor: ctx.theme.surfaceBorder }}
+        >
           <LogoMark ctx={ctx} className="mx-auto mb-2 rounded-full" />
-          <p className="text-[1.15em] font-bold uppercase tracking-[0.2em]" style={{ color: ctx.theme.primaryDark }}>
+          <p
+            className="text-[1.15em] font-bold uppercase tracking-[0.2em]"
+            style={{ color: ctx.theme.primaryDark }}
+          >
             {ctx.sellerName}
           </p>
           {ctx.sellerActivity ? (
-            <p className="text-[0.75em] uppercase tracking-widest" style={accentText(ctx)}>
+            <p
+              className="text-[0.75em] uppercase tracking-widest"
+              style={accentText(ctx)}
+            >
               {ctx.sellerActivity}
             </p>
           ) : null}
           <div className="mx-auto mt-2 flex w-24 items-center gap-1">
-            <span className="h-px flex-1" style={{ backgroundColor: ctx.theme.primaryLight }} />
+            <span
+              className="h-px flex-1"
+              style={{ backgroundColor: ctx.theme.primaryLight }}
+            />
             <span style={accentText(ctx)}>✦</span>
-            <span className="h-px flex-1" style={{ backgroundColor: ctx.theme.primaryLight }} />
+            <span
+              className="h-px flex-1"
+              style={{ backgroundColor: ctx.theme.primaryLight }}
+            />
           </div>
         </header>
 
         <div className="my-2 text-center">
-          <p className="text-[1.1em] font-bold" style={{ color: ctx.theme.primaryDark }}>
+          <p
+            className="text-[1.1em] font-bold"
+            style={{ color: ctx.theme.primaryDark }}
+          >
             {ctx.label}
           </p>
           <p className="text-[0.85em]" style={accentText(ctx)}>
@@ -877,67 +1130,103 @@ export function RoyalLayout({ ctx }: LayoutProps) {
           labelClassName="text-[0.65em] font-bold uppercase"
         />
 
-        <div className="mb-2 shrink-0 overflow-hidden rounded-lg border" style={{ borderColor: ctx.theme.surfaceBorder }}>
+        <div
+          className="mb-2 shrink-0 overflow-hidden rounded-lg border"
+          style={{ borderColor: ctx.theme.surfaceBorder }}
+        >
           <LayoutLines
             ctx={ctx}
             preview={
-            <table className="w-full text-[0.78em]">
-              <thead>
-                <tr style={tableHeadStyle(ctx)}>
-                  <th className="p-1.5 text-left">Article</th>
-                  <th className="p-1.5 text-right">Qté</th>
-                  {!ctx.deliveryNote ? <th className="p-1.5 text-right">Total</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {products.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="p-4 text-center italic" style={accentText(ctx)}>
-                      Aucune ligne
-                    </td>
+              <table className="w-full text-[0.78em]">
+                <thead>
+                  <tr style={tableHeadStyle(ctx)}>
+                    <th className="p-1.5 text-left">Article</th>
+                    <th className="p-1.5 text-right">Qté</th>
+                    {!ctx.deliveryNote ? (
+                      <th className="p-1.5 text-right">Total</th>
+                    ) : null}
                   </tr>
-                ) : (
-                  products.map((line, i) => (
-                    <tr key={i} style={i % 2 === 1 ? { backgroundColor: ctx.theme.surface } : undefined}>
-                      <td className="border-t p-1.5" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                        <p className="font-medium">{line.designation}</p>
+                </thead>
+                <tbody>
+                  {products.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={3}
+                        className="p-4 text-center italic"
+                        style={accentText(ctx)}
+                      >
+                        Aucune ligne
                       </td>
-                      <td className="border-t p-1.5 text-right tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                        {line.qty}
-                      </td>
-                      {!ctx.deliveryNote ? (
-                        <td className="border-t p-1.5 text-right font-semibold tabular-nums" style={{ borderColor: ctx.theme.surfaceBorder }}>
-                          {ctx.money(ctx.lineAmount(line))}
-                        </td>
-                      ) : null}
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          }
+                  ) : (
+                    products.map((line, i) => (
+                      <tr
+                        key={i}
+                        style={
+                          i % 2 === 1
+                            ? { backgroundColor: ctx.theme.surface }
+                            : undefined
+                        }
+                      >
+                        <td
+                          className="border-t p-1.5"
+                          style={{ borderColor: ctx.theme.surfaceBorder }}
+                        >
+                          <p className="font-medium">{line.designation}</p>
+                        </td>
+                        <td
+                          className="border-t p-1.5 text-right tabular-nums"
+                          style={{ borderColor: ctx.theme.surfaceBorder }}
+                        >
+                          {line.qty}
+                        </td>
+                        {!ctx.deliveryNote ? (
+                          <td
+                            className="border-t p-1.5 text-right font-semibold tabular-nums"
+                            style={{ borderColor: ctx.theme.surfaceBorder }}
+                          >
+                            {ctx.money(ctx.lineAmount(line))}
+                          </td>
+                        ) : null}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            }
           />
         </div>
 
         {!ctx.deliveryNote ? (
           <>
             <LayoutAdjustments ctx={ctx} className="mb-2" />
-            <div
-              className="mx-auto mb-2 w-[85%] border-2 border-double p-3 text-center"
-              style={{ borderColor: ctx.theme.primary }}
-            >
-              <p className="text-[0.7em] uppercase tracking-widest" style={accentText(ctx)}>
-                Net à payer
-              </p>
-              <p className="text-[1.35em] font-bold tabular-nums" style={{ color: ctx.theme.primaryDark }}>
-                {ctx.money(ctx.dueAmount)} MAD
-              </p>
-            </div>
+            <LayoutStaticTotals>
+              <div
+                className="mx-auto mb-2 w-[85%] border-2 border-double p-3 text-center"
+                style={{ borderColor: ctx.theme.primary }}
+              >
+                <p
+                  className="text-[0.7em] uppercase tracking-widest"
+                  style={accentText(ctx)}
+                >
+                  Net à payer
+                </p>
+                <p
+                  className="text-[1.35em] font-bold tabular-nums"
+                  style={{ color: ctx.theme.primaryDark }}
+                >
+                  {ctx.money(ctx.dueAmount)} MAD
+                </p>
+              </div>
+            </LayoutStaticTotals>
           </>
         ) : null}
 
         <LayoutSettingsBanner ctx={ctx} />
-        <footer className="mt-auto border-t pt-2 text-center text-[0.75em]" style={{ borderColor: ctx.theme.surfaceBorder, ...accentText(ctx) }}>
+        <footer
+          className="mt-auto border-t pt-2 text-center text-[0.75em]"
+          style={{ borderColor: ctx.theme.surfaceBorder, ...accentText(ctx) }}
+        >
           <FooterLegal ctx={ctx} />
         </footer>
       </div>
@@ -962,9 +1251,13 @@ export function GeometricLayout({ ctx }: LayoutProps) {
           <div className="flex items-center gap-2">
             <LogoMark ctx={ctx} />
             <div>
-              <p className="text-[0.95em] font-black uppercase tracking-wide">{ctx.sellerName}</p>
+              <p className="text-[0.95em] font-black uppercase tracking-wide">
+                {ctx.sellerName}
+              </p>
               {ctx.sellerActivity ? (
-                <p className="text-[0.7em] text-neutral-500">{ctx.sellerActivity}</p>
+                <p className="text-[0.7em] text-neutral-500">
+                  {ctx.sellerActivity}
+                </p>
               ) : null}
             </div>
           </div>
@@ -987,7 +1280,9 @@ export function GeometricLayout({ ctx }: LayoutProps) {
           {!ctx.deliveryNote ? (
             <div className="rounded bg-neutral-900 p-1.5 text-white">
               <p className="opacity-70">Total dû</p>
-              <p className="font-bold tabular-nums">{ctx.money(ctx.dueAmount)}</p>
+              <p className="font-bold tabular-nums">
+                {ctx.money(ctx.dueAmount)}
+              </p>
             </div>
           ) : null}
           <div className="rounded border border-neutral-200 bg-neutral-50 p-1.5">
@@ -1014,23 +1309,35 @@ export function GeometricLayout({ ctx }: LayoutProps) {
         ctx={ctx}
         className="mx-[5%] my-2 shrink-0 overflow-hidden"
         preview={
-          <LinesSpreadsheet ctx={ctx} headStyle={{ backgroundColor: "#2563eb", color: "#fff" }} />
+          <LinesSpreadsheet
+            ctx={ctx}
+            headStyle={{ backgroundColor: "#2563eb", color: "#fff" }}
+          />
         }
       />
 
       {!ctx.deliveryNote ? (
         <>
           <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
-          <div className="mx-[5%] mb-2 flex justify-end">
-            <div className="rounded bg-neutral-900 px-4 py-2 text-right text-white">
-              <p className="text-[0.65em] uppercase opacity-70">Net à payer</p>
-              <p className="text-[1.15em] font-bold tabular-nums">{ctx.money(ctx.dueAmount)} MAD</p>
+          <LayoutStaticTotals>
+            <div className="mx-[5%] mb-2 flex justify-end">
+              <div className="rounded bg-neutral-900 px-4 py-2 text-right text-white">
+                <p className="text-[0.65em] uppercase opacity-70">
+                  Net à payer
+                </p>
+                <p className="text-[1.15em] font-bold tabular-nums">
+                  {ctx.money(ctx.dueAmount)} MAD
+                </p>
+              </div>
             </div>
-          </div>
+          </LayoutStaticTotals>
         </>
       ) : null}
 
-      <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 text-[0.85em] text-neutral-600" />
+      <LayoutNotes
+        ctx={ctx}
+        className="mx-[5%] mb-2 text-[0.85em] text-neutral-600"
+      />
       <LayoutSettingsBanner ctx={ctx} />
       <footer className="mt-auto border-t border-neutral-200 px-[5%] py-2 text-center text-neutral-400">
         <FooterLegal ctx={ctx} />
@@ -1072,7 +1379,9 @@ export function StripeLayout({ ctx }: LayoutProps) {
               </p>
               <p className="font-bold">{ctx.sellerName}</p>
               {ctx.sellerAddress ? (
-                <p className="text-[0.8em] text-neutral-500">{ctx.sellerAddress}</p>
+                <p className="text-[0.8em] text-neutral-500">
+                  {ctx.sellerAddress}
+                </p>
               ) : null}
             </div>
           </div>
@@ -1080,29 +1389,39 @@ export function StripeLayout({ ctx }: LayoutProps) {
           <LayoutLines
             ctx={ctx}
             className="mx-[5%] mb-2 shrink-0 overflow-hidden"
-            preview={<LinesSpreadsheet ctx={ctx} headStyle={tableHeadStyle(ctx)} />}
+            preview={
+              <LinesSpreadsheet ctx={ctx} headStyle={tableHeadStyle(ctx)} />
+            }
           />
 
           {!ctx.deliveryNote ? (
             <>
               <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
-              <div className="mx-[5%] mb-2 ml-auto w-[55%] overflow-hidden rounded text-[0.8em]">
-                <div className="flex justify-between border-b border-neutral-200 py-1">
-                  <span>Sous-total HT</span>
-                  <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+              <LayoutStaticTotals>
+                <div className="mx-[5%] mb-2 ml-auto w-[55%] overflow-hidden rounded text-[0.8em]">
+                  <div className="flex justify-between border-b border-neutral-200 py-1">
+                    <span>Sous-total HT</span>
+                    <span className="tabular-nums">
+                      {ctx.money(ctx.totalHt)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b border-neutral-200 py-1">
+                    <span>TVA {ctx.vatRate}%</span>
+                    <span className="tabular-nums">
+                      {ctx.money(ctx.vatAmount)}
+                    </span>
+                  </div>
+                  <div
+                    className="flex justify-between px-2 py-1.5 font-bold"
+                    style={{ ...primaryBg(ctx), borderRadius: "0 0 4px 4px" }}
+                  >
+                    <span>{ctx.showTtc ? "Total TTC" : "Total HT"}</span>
+                    <span className="tabular-nums">
+                      {ctx.money(ctx.dueAmount)} MAD
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between border-b border-neutral-200 py-1">
-                  <span>TVA {ctx.vatRate}%</span>
-                  <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
-                </div>
-                <div
-                  className="flex justify-between px-2 py-1.5 font-bold"
-                  style={{ ...primaryBg(ctx), borderRadius: "0 0 4px 4px" }}
-                >
-                  <span>{ctx.showTtc ? "Total TTC" : "Total HT"}</span>
-                  <span className="tabular-nums">{ctx.money(ctx.dueAmount)} MAD</span>
-                </div>
-              </div>
+              </LayoutStaticTotals>
             </>
           ) : null}
 
@@ -1124,10 +1443,15 @@ export function GradientLayout({ ctx }: LayoutProps) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[1.4em] font-black uppercase">{ctx.label}</p>
-            <p className="text-[0.85em] opacity-90">#{ctx.number} · {ctx.dateFormatted}</p>
+            <p className="text-[0.85em] opacity-90">
+              #{ctx.number} · {ctx.dateFormatted}
+            </p>
           </div>
           <div className="text-right">
-            <LogoMark ctx={ctx} className="ml-auto bg-white/20 ring-1 ring-white/30" />
+            <LogoMark
+              ctx={ctx}
+              className="ml-auto bg-white/20 ring-1 ring-white/30"
+            />
             <p className="mt-1 text-[0.9em] font-bold">{ctx.sellerName}</p>
           </div>
         </div>
@@ -1151,9 +1475,11 @@ export function GradientLayout({ ctx }: LayoutProps) {
       {!ctx.deliveryNote ? (
         <>
           <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
-          <div className="mx-[5%] mb-2">
-            <TotalsBanner ctx={ctx} style={gradientBannerStyle(ctx)} dark />
-          </div>
+          <LayoutStaticTotals>
+            <div className="mx-[5%] mb-2">
+              <TotalsBanner ctx={ctx} style={gradientBannerStyle(ctx)} dark />
+            </div>
+          </LayoutStaticTotals>
         </>
       ) : null}
 
@@ -1172,11 +1498,15 @@ export function InterimLayout({ ctx }: LayoutProps) {
   return (
     <EditableLayoutFrame ctx={ctx}>
       <header className="shrink-0 px-[5%] pt-4 text-center">
-        <h1 className="text-[1.25em] font-bold text-neutral-800">{ctx.label}</h1>
+        <h1 className="text-[1.25em] font-bold text-neutral-800">
+          {ctx.label}
+        </h1>
         <div className="mt-3 flex justify-between text-left text-[0.75em]">
           <div>
             <p className="font-bold">{ctx.sellerName}</p>
-            {ctx.sellerAddress ? <p className="text-neutral-500">{ctx.sellerAddress}</p> : null}
+            {ctx.sellerAddress ? (
+              <p className="text-neutral-500">{ctx.sellerAddress}</p>
+            ) : null}
           </div>
           <LogoMark ctx={ctx} className="ml-auto" />
         </div>
@@ -1200,29 +1530,46 @@ export function InterimLayout({ ctx }: LayoutProps) {
         ctx={ctx}
         className="mx-[5%] my-2 shrink-0 overflow-hidden"
         preview={
-          <LinesSpreadsheet ctx={ctx} headStyle={{ backgroundColor: ctx.theme.primaryDark, color: "#fff" }} />
+          <LinesSpreadsheet
+            ctx={ctx}
+            headStyle={{
+              backgroundColor: ctx.theme.primaryDark,
+              color: "#fff",
+            }}
+          />
         }
       />
 
       {!ctx.deliveryNote ? (
         <>
           <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
-          <div className="mx-[5%] mb-2 space-y-0.5 text-right text-[0.8em]">
-            <div className="flex justify-end gap-6">
-              <span className="text-neutral-500">Sous-total</span>
-              <span className="w-16 tabular-nums">{ctx.money(ctx.totalHt)}</span>
-            </div>
-            <div className="flex justify-end gap-6">
-              <span className="text-neutral-500">TVA</span>
-              <span className="w-16 tabular-nums">{ctx.money(ctx.vatAmount)}</span>
-            </div>
-            <div className="mt-1 rounded px-3 py-2 font-bold text-white" style={primaryDarkBg(ctx)}>
+          <LayoutStaticTotals>
+            <div className="mx-[5%] mb-2 space-y-0.5 text-right text-[0.8em]">
               <div className="flex justify-end gap-6">
-                <span>TOTAL</span>
-                <span className="w-16 tabular-nums">{ctx.money(ctx.dueAmount)} MAD</span>
+                <span className="text-neutral-500">Sous-total</span>
+                <span className="w-16 tabular-nums">
+                  {ctx.money(ctx.totalHt)}
+                </span>
+              </div>
+              <div className="flex justify-end gap-6">
+                <span className="text-neutral-500">TVA</span>
+                <span className="w-16 tabular-nums">
+                  {ctx.money(ctx.vatAmount)}
+                </span>
+              </div>
+              <div
+                className="mt-1 rounded px-3 py-2 font-bold text-white"
+                style={primaryDarkBg(ctx)}
+              >
+                <div className="flex justify-end gap-6">
+                  <span>TOTAL</span>
+                  <span className="w-16 tabular-nums">
+                    {ctx.money(ctx.dueAmount)} MAD
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          </LayoutStaticTotals>
         </>
       ) : null}
 
@@ -1247,12 +1594,17 @@ export function BlueproLayout({ ctx }: LayoutProps) {
                 {ctx.sellerName}
               </p>
               {ctx.sellerAddress ? (
-                <p className="text-[0.7em] text-neutral-500">{ctx.sellerAddress}</p>
+                <p className="text-[0.7em] text-neutral-500">
+                  {ctx.sellerAddress}
+                </p>
               ) : null}
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[1.2em] font-black uppercase" style={{ color: ctx.theme.primaryDark }}>
+            <p
+              className="text-[1.2em] font-black uppercase"
+              style={{ color: ctx.theme.primaryDark }}
+            >
               {ctx.label}
             </p>
             <p className="text-[0.75em]">Date : {ctx.dateFormatted}</p>
@@ -1265,13 +1617,23 @@ export function BlueproLayout({ ctx }: LayoutProps) {
 
       <div className="mx-[5%] mt-2 grid grid-cols-2 gap-0 overflow-hidden rounded border text-[0.75em]">
         <div>
-          <div className="px-2 py-1 font-bold text-white" style={primaryDarkBg(ctx)}>
+          <div
+            className="px-2 py-1 font-bold text-white"
+            style={primaryDarkBg(ctx)}
+          >
             Facturé à
           </div>
-          <LayoutCounterparty ctx={ctx} className="border-t border-neutral-200 p-2" showIce={false} />
+          <LayoutCounterparty
+            ctx={ctx}
+            className="border-t border-neutral-200 p-2"
+            showIce={false}
+          />
         </div>
         <div className="border-l border-neutral-200">
-          <div className="px-2 py-1 font-bold text-white" style={primaryDarkBg(ctx)}>
+          <div
+            className="px-2 py-1 font-bold text-white"
+            style={primaryDarkBg(ctx)}
+          >
             {ctx.counterpartyLabel}
           </div>
           <div className="border-t border-neutral-200 p-2">
@@ -1296,26 +1658,41 @@ export function BlueproLayout({ ctx }: LayoutProps) {
       {!ctx.deliveryNote ? (
         <>
           <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
-          <div className="mx-[5%] mb-2 grid grid-cols-2 gap-2 text-[0.75em]">
-            <LayoutNotes ctx={ctx} className="rounded border border-neutral-200 p-2" />
-            <div className="space-y-1 text-right">
-              <div className="flex justify-between">
-                <span>Sous-total</span>
-                <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>TVA</span>
-                <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
-              </div>
-              <div className="flex justify-between border-t-2 pt-1 font-bold" style={accentBorder(ctx)}>
-                <span>Total</span>
-                <span className="tabular-nums">{ctx.money(ctx.dueAmount)} MAD</span>
+          <LayoutStaticTotals>
+            <div className="mx-[5%] mb-2 grid grid-cols-2 gap-2 text-[0.75em]">
+              <LayoutNotes
+                ctx={ctx}
+                className="rounded border border-neutral-200 p-2"
+              />
+              <div className="space-y-1 text-right">
+                <div className="flex justify-between">
+                  <span>Sous-total</span>
+                  <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>TVA</span>
+                  <span className="tabular-nums">
+                    {ctx.money(ctx.vatAmount)}
+                  </span>
+                </div>
+                <div
+                  className="flex justify-between border-t-2 pt-1 font-bold"
+                  style={accentBorder(ctx)}
+                >
+                  <span>Total</span>
+                  <span className="tabular-nums">
+                    {ctx.money(ctx.dueAmount)} MAD
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          </LayoutStaticTotals>
         </>
       ) : (
-        <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 rounded border p-2 text-[0.8em]" />
+        <LayoutNotes
+          ctx={ctx}
+          className="mx-[5%] mb-2 rounded border p-2 text-[0.8em]"
+        />
       )}
 
       <LayoutSettingsBanner ctx={ctx} />
@@ -1335,7 +1712,10 @@ export function StudioLayout({ ctx }: LayoutProps) {
         <p className="text-[1em] font-black uppercase">{ctx.sellerName}</p>
       </header>
 
-      <div className="mx-[5%] flex items-center gap-2 border-b-2 py-1" style={accentBorder(ctx)}>
+      <div
+        className="mx-[5%] flex items-center gap-2 border-b-2 py-1"
+        style={accentBorder(ctx)}
+      >
         <span className="text-[1.1em] font-black uppercase">{ctx.label}</span>
       </div>
 
@@ -1350,11 +1730,20 @@ export function StudioLayout({ ctx }: LayoutProps) {
         </div>
       </div>
 
-      <div className="mx-[5%] my-2 shrink-0 overflow-hidden border-t-2" style={accentBorder(ctx)}>
+      <div
+        className="mx-[5%] my-2 shrink-0 overflow-hidden border-t-2"
+        style={accentBorder(ctx)}
+      >
         <LayoutLines
           ctx={ctx}
           preview={
-            <LinesSpreadsheet ctx={ctx} headStyle={{ backgroundColor: "transparent", color: ctx.theme.primaryDark }} />
+            <LinesSpreadsheet
+              ctx={ctx}
+              headStyle={{
+                backgroundColor: "transparent",
+                color: ctx.theme.primaryDark,
+              }}
+            />
           }
         />
       </div>
@@ -1362,26 +1751,34 @@ export function StudioLayout({ ctx }: LayoutProps) {
       {!ctx.deliveryNote ? (
         <>
           <LayoutAdjustments ctx={ctx} className="mx-[5%]" />
-          <div className="mx-[5%] mb-2 space-y-1 text-right text-[0.75em]">
-            <div className="flex justify-end gap-4">
-              <span>Sous-total</span>
-              <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+          <LayoutStaticTotals>
+            <div className="mx-[5%] mb-2 space-y-1 text-right text-[0.75em]">
+              <div className="flex justify-end gap-4">
+                <span>Sous-total</span>
+                <span className="tabular-nums">{ctx.money(ctx.totalHt)}</span>
+              </div>
+              <div className="flex justify-end gap-4">
+                <span>TVA</span>
+                <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
+              </div>
+              <div
+                className="inline-flex min-w-[140px] justify-between rounded px-3 py-1.5 font-bold text-white"
+                style={primaryBg(ctx)}
+              >
+                <span>{ctx.showTtc ? "Solde dû" : ctx.dueLabel}</span>
+                <span className="tabular-nums">{ctx.money(ctx.dueAmount)}</span>
+              </div>
             </div>
-            <div className="flex justify-end gap-4">
-              <span>TVA</span>
-              <span className="tabular-nums">{ctx.money(ctx.vatAmount)}</span>
-            </div>
-            <div className="inline-flex min-w-[140px] justify-between rounded px-3 py-1.5 font-bold text-white" style={primaryBg(ctx)}>
-              <span>{ctx.showTtc ? "Solde dû" : ctx.dueLabel}</span>
-              <span className="tabular-nums">{ctx.money(ctx.dueAmount)}</span>
-            </div>
-          </div>
+          </LayoutStaticTotals>
         </>
       ) : null}
 
       <LayoutNotes ctx={ctx} className="mx-[5%] mb-2 text-[0.8em]" />
       <LayoutSettingsBanner ctx={ctx} />
-      <footer className="mt-auto border-t-2 px-[5%] py-2 text-center" style={accentBorder(ctx)}>
+      <footer
+        className="mt-auto border-t-2 px-[5%] py-2 text-center"
+        style={accentBorder(ctx)}
+      >
         <FooterLegal ctx={ctx} />
       </footer>
     </EditableLayoutFrame>
@@ -1397,9 +1794,13 @@ export function LedgerLayout({ ctx }: LayoutProps) {
         <header className="mb-6 flex items-start justify-between gap-6">
           <LogoMark ctx={ctx} />
           <div className="min-w-0 max-w-[55%] text-right">
-            <p className="text-[1.05em] font-bold text-[#0f172a]">{ctx.sellerName}</p>
+            <p className="text-[1.05em] font-bold text-[#0f172a]">
+              {ctx.sellerName}
+            </p>
             {ctx.sellerActivity ? (
-              <p className="mt-0.5 text-[0.75em] text-slate-500">{ctx.sellerActivity}</p>
+              <p className="mt-0.5 text-[0.75em] text-slate-500">
+                {ctx.sellerActivity}
+              </p>
             ) : null}
             {ctx.sellerAddress ? (
               <p className="mt-1.5 whitespace-pre-line text-[0.78em] leading-relaxed text-slate-500">
@@ -1421,7 +1822,9 @@ export function LedgerLayout({ ctx }: LayoutProps) {
           />
           <div className="text-[0.85em] sm:text-right">
             <p className="text-slate-500">N°</p>
-            <p className="mt-0.5 text-[1.05em] font-bold tabular-nums text-[#0f172a]">{ctx.number}</p>
+            <p className="mt-0.5 text-[1.05em] font-bold tabular-nums text-[#0f172a]">
+              {ctx.number}
+            </p>
           </div>
         </div>
 
@@ -1444,35 +1847,43 @@ export function LedgerLayout({ ctx }: LayoutProps) {
 
         {!ctx.deliveryNote ? (
           <div className="mb-6 mt-2 grid items-start gap-6 sm:grid-cols-2">
-            <p className="pt-2 text-[0.85em] text-slate-500">Merci pour votre confiance.</p>
-            <div className="w-full max-w-[240px] sm:ml-auto">
-              <LayoutAdjustments ctx={ctx} variant="stack" className="text-right" />
-              <dl className="space-y-1.5 text-[0.85em]">
-                <div className="flex items-baseline justify-between gap-6">
-                  <dt className="text-slate-500">Sous-total</dt>
-                  <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.totalHt)}</dd>
-                </div>
-                <div className="flex items-baseline justify-between gap-6">
-                  <dt className="text-slate-500">TVA ({ctx.vatRate}%)</dt>
-                  <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.vatAmount)}</dd>
-                </div>
-                <div className="mt-1 flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
-                  <dt className="font-bold text-[#0f172a]">
-                    {ctx.showTtc ? "Total" : ctx.dueLabel}
-                  </dt>
-                  <dd className="text-[1.1em] font-bold tabular-nums text-[#0f172a]">
-                    {ctx.money(ctx.showTtc ? ctx.totalTtc : ctx.dueAmount)}
-                  </dd>
-                </div>
-                {ctx.showTtc ? (
+            <p className="pt-2 text-[0.85em] text-slate-500">
+              Merci pour votre confiance.
+            </p>
+            <div className="w-full max-w-[320px] sm:ml-auto">
+              <LayoutAdjustments ctx={ctx} />
+              <LayoutStaticTotals>
+                <dl className="space-y-1.5 text-[0.85em]">
                   <div className="flex items-baseline justify-between gap-6">
-                    <dt className="font-bold text-[#0f172a]">Solde dû</dt>
-                    <dd className="font-bold tabular-nums text-[#0f172a]">
-                      {ctx.money(ctx.dueAmount)}
+                    <dt className="text-slate-500">Sous-total</dt>
+                    <dd className="tabular-nums text-[#0f172a]">
+                      {ctx.money(ctx.totalHt)}
                     </dd>
                   </div>
-                ) : null}
-              </dl>
+                  <div className="flex items-baseline justify-between gap-6">
+                    <dt className="text-slate-500">TVA ({ctx.vatRate}%)</dt>
+                    <dd className="tabular-nums text-[#0f172a]">
+                      {ctx.money(ctx.vatAmount)}
+                    </dd>
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
+                    <dt className="font-bold text-[#0f172a]">
+                      {ctx.showTtc ? "Total" : ctx.dueLabel}
+                    </dt>
+                    <dd className="text-[1.1em] font-bold tabular-nums text-[#0f172a]">
+                      {ctx.money(ctx.showTtc ? ctx.totalTtc : ctx.dueAmount)}
+                    </dd>
+                  </div>
+                  {ctx.showTtc ? (
+                    <div className="flex items-baseline justify-between gap-6">
+                      <dt className="font-bold text-[#0f172a]">Solde dû</dt>
+                      <dd className="font-bold tabular-nums text-[#0f172a]">
+                        {ctx.money(ctx.dueAmount)}
+                      </dd>
+                    </div>
+                  ) : null}
+                </dl>
+              </LayoutStaticTotals>
             </div>
           </div>
         ) : null}
@@ -1495,7 +1906,10 @@ export function FolioLayout({ ctx }: LayoutProps) {
       <div className="flex h-full flex-col">
         <header
           className="flex shrink-0 items-start justify-between gap-4 px-6 py-5 sm:px-8"
-          style={{ backgroundColor: ctx.theme.primary, color: ctx.theme.onPrimary }}
+          style={{
+            backgroundColor: ctx.theme.primary,
+            color: ctx.theme.onPrimary,
+          }}
         >
           <div className="min-w-0 shrink-0">
             {ctx.logoUrl ? (
@@ -1512,7 +1926,9 @@ export function FolioLayout({ ctx }: LayoutProps) {
           <div className="min-w-0 max-w-[38%] text-right text-[0.78em] leading-relaxed opacity-95">
             <p className="text-[1.05em] font-bold">{ctx.sellerName}</p>
             {ctx.sellerAddress ? (
-              <p className="mt-1 whitespace-pre-line opacity-90">{ctx.sellerAddress}</p>
+              <p className="mt-1 whitespace-pre-line opacity-90">
+                {ctx.sellerAddress}
+              </p>
             ) : null}
           </div>
         </header>
@@ -1546,33 +1962,49 @@ export function FolioLayout({ ctx }: LayoutProps) {
                 <thead>
                   <tr className="border-b border-slate-300 text-[0.7em] uppercase tracking-wide text-slate-400">
                     <th className="w-8 py-2 text-left font-semibold">#</th>
-                    <th className="py-2 text-left font-semibold">Article & description</th>
+                    <th className="py-2 text-left font-semibold">
+                      Article & description
+                    </th>
                     <th className="w-16 py-2 text-right font-semibold">Qté</th>
                     {!ctx.deliveryNote ? (
-                      <th className="w-24 py-2 text-right font-semibold">Montant</th>
+                      <th className="w-24 py-2 text-right font-semibold">
+                        Montant
+                      </th>
                     ) : null}
                   </tr>
                 </thead>
                 <tbody>
                   {products.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center italic text-slate-400">
+                      <td
+                        colSpan={4}
+                        className="py-6 text-center italic text-slate-400"
+                      >
                         Aucune ligne
                       </td>
                     </tr>
                   ) : (
                     products.map((line, i) => (
-                      <tr key={i} className="border-b border-slate-100 align-top">
-                        <td className="py-3 tabular-nums text-slate-400">{i + 1}</td>
+                      <tr
+                        key={i}
+                        className="border-b border-slate-100 align-top"
+                      >
+                        <td className="py-3 tabular-nums text-slate-400">
+                          {i + 1}
+                        </td>
                         <td className="py-3 pr-3">
-                          <p className="font-semibold text-[#0f172a]">{line.designation}</p>
+                          <p className="font-semibold text-[#0f172a]">
+                            {line.designation}
+                          </p>
                           {!ctx.deliveryNote ? (
                             <p className="mt-1 text-[0.9em] tabular-nums text-slate-400">
                               {line.qty} × {ctx.money(line.unitPriceHt)}
                             </p>
                           ) : null}
                         </td>
-                        <td className="py-3 text-right tabular-nums text-slate-600">{line.qty}</td>
+                        <td className="py-3 text-right tabular-nums text-slate-600">
+                          {line.qty}
+                        </td>
                         {!ctx.deliveryNote ? (
                           <td className="py-3 text-right font-medium tabular-nums text-[#0f172a]">
                             {ctx.money(ctx.lineAmount(line))}
@@ -1588,35 +2020,43 @@ export function FolioLayout({ ctx }: LayoutProps) {
 
           {!ctx.deliveryNote ? (
             <div className="mb-6 mt-4 grid items-start gap-6 sm:grid-cols-2">
-              <p className="pt-2 text-[0.85em] text-slate-400">Merci pour votre confiance.</p>
-              <div className="w-full max-w-[260px] space-y-3 sm:ml-auto">
-                <LayoutAdjustments ctx={ctx} variant="stack" className="text-right" />
-                <dl className="space-y-2 rounded-sm bg-[#f3f4f6] px-4 py-3 text-[0.85em]">
-                  <div className="flex items-baseline justify-between gap-6">
-                    <dt className="text-slate-500">Sous-total</dt>
-                    <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.totalHt)}</dd>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-6">
-                    <dt className="text-slate-500">TVA ({ctx.vatRate}%)</dt>
-                    <dd className="tabular-nums text-[#0f172a]">{ctx.money(ctx.vatAmount)}</dd>
-                  </div>
-                  {ctx.showTtc ? (
-                    <div className="flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
-                      <dt className="font-bold text-[#0f172a]">Total</dt>
-                      <dd className="font-bold tabular-nums text-[#0f172a]">
-                        {ctx.money(ctx.totalTtc)}
+              <p className="pt-2 text-[0.85em] text-slate-400">
+                Merci pour votre confiance.
+              </p>
+              <div className="w-full max-w-[320px] space-y-3 sm:ml-auto">
+                <LayoutAdjustments ctx={ctx} />
+                <LayoutStaticTotals>
+                  <dl className="space-y-2 rounded-sm bg-[#f3f4f6] px-4 py-3 text-[0.85em]">
+                    <div className="flex items-baseline justify-between gap-6">
+                      <dt className="text-slate-500">Sous-total</dt>
+                      <dd className="tabular-nums text-[#0f172a]">
+                        {ctx.money(ctx.totalHt)}
                       </dd>
                     </div>
-                  ) : null}
-                  <div className="flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
-                    <dt className="font-bold text-[#0f172a]">
-                      {ctx.showTtc ? "Solde dû" : ctx.dueLabel}
-                    </dt>
-                    <dd className="font-bold tabular-nums text-[#0f172a]">
-                      {ctx.money(ctx.dueAmount)}
-                    </dd>
-                  </div>
-                </dl>
+                    <div className="flex items-baseline justify-between gap-6">
+                      <dt className="text-slate-500">TVA ({ctx.vatRate}%)</dt>
+                      <dd className="tabular-nums text-[#0f172a]">
+                        {ctx.money(ctx.vatAmount)}
+                      </dd>
+                    </div>
+                    {ctx.showTtc ? (
+                      <div className="flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
+                        <dt className="font-bold text-[#0f172a]">Total</dt>
+                        <dd className="font-bold tabular-nums text-[#0f172a]">
+                          {ctx.money(ctx.totalTtc)}
+                        </dd>
+                      </div>
+                    ) : null}
+                    <div className="flex items-baseline justify-between gap-6 border-t border-slate-200 pt-2">
+                      <dt className="font-bold text-[#0f172a]">
+                        {ctx.showTtc ? "Solde dû" : ctx.dueLabel}
+                      </dt>
+                      <dd className="font-bold tabular-nums text-[#0f172a]">
+                        {ctx.money(ctx.dueAmount)}
+                      </dd>
+                    </div>
+                  </dl>
+                </LayoutStaticTotals>
               </div>
             </div>
           ) : null}
@@ -1653,7 +2093,9 @@ export function RubyLayout({ ctx }: LayoutProps) {
             >
               {ctx.label}
             </h1>
-            <p className="mt-1.5 text-[0.8em] tabular-nums text-slate-400">{ctx.number}</p>
+            <p className="mt-1.5 text-[0.8em] tabular-nums text-slate-400">
+              {ctx.number}
+            </p>
           </div>
         </header>
 
@@ -1683,21 +2125,32 @@ export function RubyLayout({ ctx }: LayoutProps) {
               <tbody>
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-6 text-center italic text-slate-400">
+                    <td
+                      colSpan={5}
+                      className="py-6 text-center italic text-slate-400"
+                    >
                       Aucune ligne
                     </td>
                   </tr>
                 ) : (
                   products.map((line, i) => (
                     <tr key={i} className="border-b border-slate-100 align-top">
-                      <td className="py-3 tabular-nums text-slate-400">{i + 1}</td>
+                      <td className="py-3 tabular-nums text-slate-400">
+                        {i + 1}
+                      </td>
                       <td className="py-3 pr-3">
-                        <p className="font-semibold text-slate-800">{line.designation}</p>
+                        <p className="font-semibold text-slate-800">
+                          {line.designation}
+                        </p>
                         {line.unit ? (
-                          <p className="mt-0.5 text-[0.9em] text-slate-400">{line.unit}</p>
+                          <p className="mt-0.5 text-[0.9em] text-slate-400">
+                            {line.unit}
+                          </p>
                         ) : null}
                       </td>
-                      <td className="py-3 text-right tabular-nums text-slate-700">{line.qty}</td>
+                      <td className="py-3 text-right tabular-nums text-slate-700">
+                        {line.qty}
+                      </td>
                       {!ctx.deliveryNote ? (
                         <>
                           <td className="py-3 text-right tabular-nums text-slate-700">
@@ -1722,40 +2175,48 @@ export function RubyLayout({ ctx }: LayoutProps) {
 
         {!ctx.deliveryNote ? (
           <div className="mb-6 mt-4 grid items-end gap-6 sm:grid-cols-2">
-            <p className="text-[0.85em] text-slate-400">Merci pour votre confiance.</p>
-            <div className="w-full max-w-[260px] sm:ml-auto">
-              <LayoutAdjustments ctx={ctx} variant="stack" className="text-right" />
-              <dl className="space-y-1.5 text-[0.85em]">
-                <div className="flex items-baseline justify-between gap-6">
-                  <dt style={{ color: accent }}>Sous-total</dt>
-                  <dd className="tabular-nums text-slate-800">{ctx.money(ctx.totalHt)}</dd>
-                </div>
-                <div className="flex items-baseline justify-between gap-6">
-                  <dt style={{ color: accent }}>TVA ({ctx.vatRate}%)</dt>
-                  <dd className="tabular-nums text-slate-800">{ctx.money(ctx.vatAmount)}</dd>
-                </div>
-                {ctx.showTtc ? (
+            <p className="text-[0.85em] text-slate-400">
+              Merci pour votre confiance.
+            </p>
+            <div className="w-full max-w-[320px] sm:ml-auto">
+              <LayoutAdjustments ctx={ctx} />
+              <LayoutStaticTotals>
+                <dl className="space-y-1.5 text-[0.85em]">
                   <div className="flex items-baseline justify-between gap-6">
-                    <dt className="font-semibold" style={{ color: accent }}>
-                      Total
-                    </dt>
-                    <dd className="font-bold tabular-nums text-slate-800">
-                      {ctx.money(ctx.totalTtc)}
+                    <dt style={{ color: accent }}>Sous-total</dt>
+                    <dd className="tabular-nums text-slate-800">
+                      {ctx.money(ctx.totalHt)}
                     </dd>
                   </div>
-                ) : null}
-              </dl>
-              <div
-                className="mt-3 flex items-center justify-between gap-4 px-3 py-2.5 text-white"
-                style={{ backgroundColor: accent }}
-              >
-                <span className="text-[0.85em] font-semibold">
-                  {ctx.dueLabel === "Net HT" ? "Net HT" : "Solde dû"}
-                </span>
-                <span className="text-[1.05em] font-bold tabular-nums">
-                  {ctx.money(ctx.dueAmount)}
-                </span>
-              </div>
+                  <div className="flex items-baseline justify-between gap-6">
+                    <dt style={{ color: accent }}>TVA ({ctx.vatRate}%)</dt>
+                    <dd className="tabular-nums text-slate-800">
+                      {ctx.money(ctx.vatAmount)}
+                    </dd>
+                  </div>
+                  {ctx.showTtc ? (
+                    <div className="flex items-baseline justify-between gap-6">
+                      <dt className="font-semibold" style={{ color: accent }}>
+                        Total
+                      </dt>
+                      <dd className="font-bold tabular-nums text-slate-800">
+                        {ctx.money(ctx.totalTtc)}
+                      </dd>
+                    </div>
+                  ) : null}
+                </dl>
+                <div
+                  className="mt-3 flex items-center justify-between gap-4 px-3 py-2.5 text-white"
+                  style={{ backgroundColor: accent }}
+                >
+                  <span className="text-[0.85em] font-semibold">
+                    {ctx.dueLabel === "Net HT" ? "Net HT" : "Solde dû"}
+                  </span>
+                  <span className="text-[1.05em] font-bold tabular-nums">
+                    {ctx.money(ctx.dueAmount)}
+                  </span>
+                </div>
+              </LayoutStaticTotals>
             </div>
           </div>
         ) : null}
@@ -1763,9 +2224,168 @@ export function RubyLayout({ ctx }: LayoutProps) {
         <LayoutNotes ctx={ctx} className="mb-4 border-0 px-0 py-0" />
         <LayoutSettingsBanner ctx={ctx} />
         <footer className="mt-auto border-t border-slate-200 pt-3">
-          <p className="text-[0.9em] font-bold text-slate-900">{ctx.sellerName}</p>
+          <p className="text-[0.9em] font-bold text-slate-900">
+            {ctx.sellerName}
+          </p>
           {ctx.sellerAddress ? (
-            <p className="mt-0.5 whitespace-pre-line text-[0.75em] text-slate-400">{ctx.sellerAddress}</p>
+            <p className="mt-0.5 whitespace-pre-line text-[0.75em] text-slate-400">
+              {ctx.sellerAddress}
+            </p>
+          ) : null}
+          <div className="mt-2 text-center text-slate-400">
+            <FooterLegal ctx={ctx} />
+          </div>
+        </footer>
+      </div>
+    </EditableLayoutFrame>
+  );
+}
+
+/** 20 — Quill : facture simple style Invoice Ninja */
+export function QuillLayout({ ctx }: LayoutProps) {
+  const products = renderProductLines(ctx);
+  const headBg = ctx.theme.primaryDark;
+  const fromBox =
+    "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-[0.9em] text-[#0f172a]";
+  const partyBox =
+    "mt-1.5 min-h-[88px] w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-[0.85em]";
+
+  return (
+    <EditableLayoutFrame ctx={ctx}>
+      <div className="flex h-full flex-col px-6 py-7 sm:px-10 sm:py-9">
+        <header className="mb-6 flex items-start justify-between gap-6">
+          <div className="min-w-0">
+            <LogoMark ctx={ctx} className="!mb-3 !h-14 !max-w-[120px]" />
+            <h1 className="text-[1.75em] font-bold uppercase tracking-[0.04em] leading-none text-[#0f172a] sm:hidden">
+              {ctx.label}
+            </h1>
+          </div>
+          <div className="hidden shrink-0 text-right sm:block">
+            <h1 className="text-[1.85em] font-bold uppercase tracking-[0.04em] leading-none text-[#0f172a]">
+              {ctx.label}
+            </h1>
+            <p className="mt-2 text-[0.95em] tabular-nums text-slate-500">
+              <span className="text-slate-400">#</span> {ctx.number}
+            </p>
+          </div>
+        </header>
+
+        <div className="mb-5 grid items-start gap-6 sm:grid-cols-[1.05fr_minmax(0,1fr)]">
+          <div className="min-w-0">
+            <p className="text-[0.78em] text-slate-500">{ctx.t("from")}</p>
+            <SellerFromBlock ctx={ctx} className={fromBox} />
+          </div>
+          <LayoutMetaBar ctx={ctx} variant="quill" className="!max-w-none" />
+        </div>
+
+        <div className="mb-6 grid items-start gap-4 sm:grid-cols-2">
+          <div>
+            <p className="text-[0.78em] text-slate-500">{ctx.t("billTo")}</p>
+            <div className={partyBox}>
+              <LayoutCounterparty
+                ctx={ctx}
+                labelClassName="!mb-0 !hidden"
+                showIce
+              />
+            </div>
+          </div>
+          <div>
+            <p className="text-[0.78em] text-slate-500">{ctx.t("shipTo")}</p>
+            <div className={cn(partyBox, "text-slate-400")}>
+              {ctx.addrLine?.trim() || ctx.t("optional")}
+            </div>
+          </div>
+        </div>
+
+        <LayoutLines
+          ctx={ctx}
+          className="mb-2 px-0 py-0"
+          darkHead
+          variant="quill"
+          preview={
+            <div className="overflow-hidden rounded-md">
+              <table className="w-full border-collapse text-[0.82em]">
+                <thead>
+                  <tr style={{ backgroundColor: headBg, color: "#fff" }}>
+                    <th className="px-3 py-2.5 text-left text-[0.78em] font-semibold">
+                      {ctx.t("item")}
+                    </th>
+                    <th className="w-20 px-2 py-2.5 text-right text-[0.78em] font-semibold">
+                      {ctx.t("qty")}
+                    </th>
+                    {!ctx.deliveryNote ? (
+                      <>
+                        <th className="w-24 px-2 py-2.5 text-right text-[0.78em] font-semibold">
+                          {ctx.t("rate")}
+                        </th>
+                        <th className="w-28 px-3 py-2.5 text-right text-[0.78em] font-semibold">
+                          {ctx.t("amount")}
+                        </th>
+                      </>
+                    ) : null}
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={ctx.deliveryNote ? 2 : 4}
+                        className="border border-slate-200 px-3 py-4 text-slate-400"
+                      >
+                        Description de l&apos;article ou service…
+                      </td>
+                    </tr>
+                  ) : (
+                    products.map((line, i) => (
+                      <tr
+                        key={i}
+                        className="border-b border-slate-200 align-top"
+                      >
+                        <td className="px-3 py-2.5">
+                          <p className="whitespace-pre-wrap break-words font-medium text-[#0f172a]">
+                            {line.designation}
+                          </p>
+                        </td>
+                        <td className="px-2 py-2.5 text-right tabular-nums">
+                          {line.qty}
+                        </td>
+                        {!ctx.deliveryNote ? (
+                          <>
+                            <td className="px-2 py-2.5 text-right tabular-nums">
+                              {ctx.money(line.unitPriceHt)}
+                            </td>
+                            <td className="px-3 py-2.5 text-right font-medium tabular-nums">
+                              {ctx.money(ctx.lineAmount(line))}
+                            </td>
+                          </>
+                        ) : null}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          }
+        />
+
+        {!ctx.deliveryNote ? (
+          <div className="mb-6 mt-4 grid items-start gap-8 sm:grid-cols-2">
+            <QuillNotesAndTerms ctx={ctx} />
+            <QuillTotals ctx={ctx} />
+          </div>
+        ) : (
+          <LayoutNotes ctx={ctx} className="mb-4 border-0 px-0 py-0" />
+        )}
+
+        <LayoutSettingsBanner ctx={ctx} />
+        <footer className="mt-auto border-t border-slate-200 pt-3">
+          <p className="text-[0.9em] font-bold text-slate-900">
+            {ctx.sellerName}
+          </p>
+          {ctx.sellerAddress ? (
+            <p className="mt-0.5 whitespace-pre-line text-[0.75em] text-slate-400">
+              {ctx.sellerAddress}
+            </p>
           ) : null}
           <div className="mt-2 text-center text-slate-400">
             <FooterLegal ctx={ctx} />
@@ -1796,4 +2416,5 @@ export const LAYOUT_REGISTRY = {
   ledger: LedgerLayout,
   folio: FolioLayout,
   ruby: RubyLayout,
+  quill: QuillLayout,
 } as const;

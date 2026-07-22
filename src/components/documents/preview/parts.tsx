@@ -1,9 +1,13 @@
+"use client";
+
 import type { CSSProperties, ReactNode } from "react";
+import { Pencil } from "lucide-react";
 import type { LineItem } from "@/lib/documents";
 import { themeCssVars } from "@/lib/document-theme";
 import { cn } from "@/lib/utils";
 import { buildSellerFooterLines } from "@/lib/seller-footer";
 import { DocumentCachetZone } from "./CachetImage";
+import { useDocumentEdit } from "./document-edit-context";
 import { TrimmedLogoImage } from "./TrimmedLogoImage";
 import type { PreviewContext } from "./types";
 
@@ -23,13 +27,15 @@ export function PaperFrame({
   if (variant === "editor") {
     return (
       <article
-        className="relative flex w-full flex-col bg-white text-[#1e293b]"
+        dir={ctx.rtl ? "rtl" : "ltr"}
+        className="relative flex w-full flex-col bg-white text-[#1e293b] [&_.doc-preview-totals]:hidden"
         style={{
           fontSize: "clamp(9px, 1.8vw, 11px)",
           ...themeCssVars(ctx.theme),
         }}
       >
         {children}
+        {/* Cachet preview sits under the Afficher/Retirer le cachet control while editing */}
       </article>
     );
   }
@@ -37,6 +43,7 @@ export function PaperFrame({
   return (
     <div className="rounded-lg bg-[#e8eaed] p-3 shadow-inner">
       <article
+        dir={ctx.rtl ? "rtl" : "ltr"}
         className="relative mx-auto flex w-full min-h-0 flex-col overflow-y-auto bg-white text-[#1e293b] shadow-[0_4px_24px_rgba(0,0,0,0.12)]"
         style={{
           aspectRatio: "210 / 297",
@@ -53,6 +60,8 @@ export function PaperFrame({
 }
 
 export function FooterLegal({ ctx }: { ctx: PreviewContext }) {
+  const edit = useDocumentEdit();
+  const canEdit = !!edit && !edit.readOnly && !!edit.onOpenBranding;
   const lines = buildSellerFooterLines({
     sellerPhone: ctx.sellerPhone,
     sellerWebsite: ctx.sellerWebsite,
@@ -65,20 +74,33 @@ export function FooterLegal({ ctx }: { ctx: PreviewContext }) {
     sellerLegal: ctx.sellerLegal,
     sellerContact: ctx.sellerContact,
   });
+
+  const body =
+    lines.length === 0 ? (
+      ctx.previewMode || canEdit ? (
+        <p className="text-[0.75em] italic text-slate-300">
+          {canEdit ? "Cliquer pour compléter le pied de page" : "Pied de page — Modèle société"}
+        </p>
+      ) : null
+    ) : (
+      lines.map((l) => (
+        <p key={l} className="text-[0.75em] leading-relaxed break-words uppercase">
+          {l}
+        </p>
+      ))
+    );
+
+  if (!canEdit || !body) return <>{body}</>;
+
   return (
-    <>
-      {lines.length === 0 ? (
-        ctx.previewMode ? (
-          <p className="text-[0.75em] italic text-slate-300">Pied de page — Modèle société</p>
-        ) : null
-      ) : (
-        lines.map((l) => (
-          <p key={l} className="text-[0.75em] leading-relaxed break-words uppercase">
-            {l}
-          </p>
-        ))
-      )}
-    </>
+    <button
+      type="button"
+      onClick={() => edit.onOpenBranding?.("footer")}
+      className="w-full rounded-md text-left outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-teal-500/30"
+      title="Modifier le pied de page société"
+    >
+      {body}
+    </button>
   );
 }
 
@@ -124,15 +146,21 @@ export function TotalsBanner({
         { k: "Total TTC", v: ctx.totalTtc },
         { k: "Net à payer", v: ctx.netToPay, highlight: true },
       ]
-    : [
-        { k: "Total HT", v: ctx.totalHt },
-        { k: "TVA", v: ctx.vatAmount },
-        { k: "Net HT", v: ctx.netHt, highlight: true },
-      ];
+    : ctx.deposit > 0
+      ? [
+          { k: "Total HT", v: ctx.netHt },
+          { k: "Acompte", v: ctx.deposit },
+          { k: "Net à payer", v: ctx.netToPay, highlight: true },
+        ]
+      : [
+          { k: "Total HT", v: ctx.totalHt },
+          { k: "TVA", v: ctx.vatAmount },
+          { k: "Net HT", v: ctx.netHt, highlight: true },
+        ];
   return (
     <div
       className={cn(
-        "grid gap-px overflow-hidden rounded-lg",
+        "doc-preview-totals grid gap-px overflow-hidden rounded-lg",
         ctx.showTtc ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3",
       )}
       style={style}
@@ -246,26 +274,117 @@ export function LinesSpreadsheet({
 }
 
 export function LogoMark({ ctx, className = "", style }: { ctx: PreviewContext; className?: string; style?: CSSProperties }) {
+  const edit = useDocumentEdit();
+  const canEdit = !!edit && !edit.readOnly && !!edit.onOpenBranding;
+
+  let mark: ReactNode;
   if (ctx.logoUrl) {
-    return (
+    mark = (
       <TrimmedLogoImage
         src={ctx.logoUrl}
         className={cn("h-24 w-auto max-w-[220px] shrink-0 object-contain", className)}
         style={style}
       />
     );
+  } else if (canEdit) {
+    mark = (
+      <div
+        className={cn(
+          "flex h-14 min-w-[7rem] shrink-0 flex-col items-center justify-center gap-0.5 rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 text-[0.7em] font-medium text-slate-400",
+          className,
+        )}
+        style={style}
+      >
+        <span>Logo</span>
+        <span className="text-[0.9em] text-teal-600">Ajouter</span>
+      </div>
+    );
+  } else if (ctx.sellerName?.trim()) {
+    mark = (
+      <div
+        className={cn(
+          "flex h-14 w-14 shrink-0 items-center justify-center rounded-md text-xs font-bold",
+          className,
+        )}
+        style={{ backgroundColor: ctx.theme.primary, color: ctx.theme.onPrimary, ...style }}
+      >
+        {ctx.sellerName.slice(0, 2).toUpperCase()}
+      </div>
+    );
+  } else {
+    return null;
   }
-  if (!ctx.sellerName?.trim()) return null;
+
+  if (!canEdit) return <>{mark}</>;
+
   return (
-    <div
-      className={cn(
-        "flex h-14 w-14 shrink-0 items-center justify-center rounded-md text-xs font-bold",
-        className,
-      )}
-      style={{ backgroundColor: ctx.theme.primary, color: ctx.theme.onPrimary, ...style }}
+    <button
+      type="button"
+      onClick={() => edit.onOpenBranding?.("logo")}
+      className="group relative inline-flex max-w-full items-start rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40"
+      title="Modifier le logo"
     >
-      {ctx.sellerName.slice(0, 2).toUpperCase()}
-    </div>
+      {mark}
+      <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 opacity-90 shadow-sm transition group-hover:text-teal-600 group-hover:opacity-100">
+        <Pencil className="h-3 w-3" />
+      </span>
+    </button>
+  );
+}
+
+/** Clickable company “Émetteur” block — opens société branding. */
+export function SellerFromBlock({
+  ctx,
+  className,
+}: {
+  ctx: PreviewContext;
+  className?: string;
+}) {
+  const edit = useDocumentEdit();
+  const canEdit = !!edit && !edit.readOnly && !!edit.onOpenBranding;
+
+  const content = (
+    <>
+      <p className="font-semibold text-[#0f172a]">
+        {ctx.sellerName?.trim() || (canEdit ? "Qui émet ce document ?" : "—")}
+      </p>
+      {ctx.sellerActivity ? (
+        <p className="mt-0.5 text-[0.9em] text-slate-500">{ctx.sellerActivity}</p>
+      ) : canEdit ? (
+        <p className="mt-0.5 text-[0.9em] text-slate-400">Activité (optionnel)</p>
+      ) : null}
+      {ctx.sellerAddress ? (
+        <p className="mt-1 whitespace-pre-line text-[0.9em] leading-relaxed text-slate-500">
+          {ctx.sellerAddress}
+        </p>
+      ) : canEdit ? (
+        <p className="mt-1 text-[0.9em] text-slate-400">Adresse de la société</p>
+      ) : null}
+      {canEdit ? (
+        <p className="mt-2 inline-flex items-center gap-1 text-[0.78em] font-medium text-teal-600">
+          <Pencil className="h-3 w-3" />
+          Modifier la société
+        </p>
+      ) : null}
+    </>
+  );
+
+  if (!canEdit) {
+    return <div className={className}>{content}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => edit.onOpenBranding?.("seller")}
+      className={cn(
+        className,
+        "w-full text-left outline-none transition hover:border-teal-300 hover:bg-teal-50/40 focus-visible:ring-2 focus-visible:ring-teal-500/30",
+      )}
+      title="Modifier les informations société"
+    >
+      {content}
+    </button>
   );
 }
 

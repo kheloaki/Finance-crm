@@ -1,18 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { Copy, MoreHorizontal, Package, Plus, StickyNote, Trash2 } from "lucide-react";
+import { Copy, Package, Plus, StickyNote, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { AutoGrowTextarea } from "@/components/ui/auto-grow-textarea";
 import { HtTtcField } from "@/components/ui/ht-ttc-field";
 import { CatalogCreateRow } from "@/components/documents/CounterpartyDatasheet";
+import { DocumentCachetButton } from "@/components/documents/DocumentCachetButton";
+import { CachetImage } from "@/components/documents/preview/CachetImage";
+import { useDocumentEdit } from "@/components/documents/preview/document-edit-context";
 import { DataSheet, DATA_SHEET_WIDTH_WIDE } from "@/components/datasheet/DataSheet";
 import { docFieldDenseClass, inputDenseClass, sectionTitleClass, tableHeadClass } from "@/lib/design";
 import type { LineItem } from "@/lib/documents";
 import { PRODUCT_UNITS } from "@/lib/documents";
 import { formatMoney, htToTtc, lineTotalTtc, roundMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { DEFAULT_CURRENCY } from "@/lib/currencies";
+import { DEFAULT_DOCUMENT_LANGUAGE, t, type DocumentLanguageId } from "@/lib/document-i18n";
 
 type CatalogItem = {
   _id: string;
@@ -200,6 +204,9 @@ export function LineItemsEditor({
   embedded,
   darkHead,
   amountDisplay = "ht_ttc",
+  variant,
+  currency = DEFAULT_CURRENCY,
+  lang = DEFAULT_DOCUMENT_LANGUAGE,
 }: {
   lines: LineItem[];
   onChange: (lines: LineItem[]) => void;
@@ -215,18 +222,74 @@ export function LineItemsEditor({
   darkHead?: boolean;
   /** HT only vs HT + TTC columns */
   amountDisplay?: import("@/lib/documents").AmountDisplay;
+  /** Invoice Ninja–style simplified columns */
+  variant?: "quill";
+  currency?: string;
+  lang?: DocumentLanguageId | string;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState("");
-  const [lineToRemove, setLineToRemove] = useState<number | null>(null);
   const autoOpened = useRef(false);
+  const quillSeeded = useRef(false);
+  const isQuill = variant === "quill";
+  const edit = useDocumentEdit();
+  const hasCachetAsset = !!edit?.settings?.cachetUrl;
+  const cachetUrl = edit?.showCachet ? edit.settings?.cachetUrl : undefined;
+
+  const cachetControls =
+    edit && !readOnly ? (
+      <div className="flex flex-col items-end gap-2">
+        <DocumentCachetButton
+          showCachet={edit.showCachet}
+          hasCachetAsset={hasCachetAsset}
+          readOnly={!!readOnly}
+          onToggle={() => edit.onShowCachetChange(!edit.showCachet)}
+          onAddCachet={() => edit.onOpenBranding?.("cachet")}
+          className={isQuill ? "h-8 gap-1.5 px-3 text-[12px] shadow-sm" : "h-7 gap-1 px-2 text-[10px]"}
+        />
+        {cachetUrl ? (
+          <button
+            type="button"
+            onClick={() => edit.onOpenBranding?.("cachet")}
+            className="rounded-md border border-slate-200 bg-white p-2 shadow-sm outline-none hover:border-slate-300"
+            title="Modifier le cachet"
+          >
+            <CachetImage
+              src={cachetUrl}
+              placementSeed={cachetUrl}
+              className="h-16 max-w-[7.5rem]"
+            />
+          </button>
+        ) : null}
+      </div>
+    ) : cachetUrl ? (
+      <div className="flex justify-end">
+        <CachetImage src={cachetUrl} placementSeed={cachetUrl} className="h-16 max-w-[7.5rem]" />
+      </div>
+    ) : null;
 
   useEffect(() => {
-    if (autoOpenCatalog && lines.length === 0 && !autoOpened.current) {
+    if (autoOpenCatalog && lines.length === 0 && !autoOpened.current && !embedded) {
       autoOpened.current = true;
       setPickerOpen(true);
     }
-  }, [autoOpenCatalog, lines.length]);
+  }, [autoOpenCatalog, lines.length, embedded]);
+
+  // Seed one blank row in the document editor (Quill-style — no dashed empty state).
+  useEffect(() => {
+    if (!embedded || readOnly || quillSeeded.current || lines.length > 0) return;
+    quillSeeded.current = true;
+    onChange([
+      {
+        reference: "",
+        designation: "",
+        unit: "u",
+        qty: 1,
+        unitPriceHt: 0,
+        sortOrder: 0,
+      },
+    ]);
+  }, [embedded, readOnly, lines.length, onChange]);
 
   const filteredCatalog = useMemo(() => {
     const q = pickerQuery.trim().toLowerCase();
@@ -240,16 +303,30 @@ export function LineItemsEditor({
 
   const productCount = lines.filter((l) => !l.isNote && l.designation.trim()).length;
   const showTtc = amountDisplay !== "ht";
-  const lineFieldClass = embedded ? docFieldDenseClass : inputDenseClass;
+  const lineFieldClass = embedded
+    ? isQuill
+      ? "w-full min-h-[28px] rounded-none border-0 bg-transparent px-1 py-0.5 text-[12px] text-ink outline-none placeholder:text-slate-400 focus:bg-slate-50/80"
+      : "w-full min-h-[28px] rounded-none border-0 bg-transparent px-1 py-0.5 text-xs text-ink outline-none placeholder:text-ink-muted focus:bg-slate-50/80"
+    : inputDenseClass;
+  const lineTextClass = cn(lineFieldClass, "min-w-0 max-w-full leading-[1.35]");
+  // Numeric cells keep a light border for clarity (qty / tarif).
+  const lineNumericClass = isQuill
+    ? lineFieldClass
+    : embedded
+      ? docFieldDenseClass
+      : inputDenseClass;
   const lineHeadClass = embedded
     ? cn(
         `${tableHeadClass} px-1.5 py-1 text-[10px]`,
-        darkHead && "!border-slate-900 !bg-slate-900 !text-white",
+        (darkHead || isQuill) && "!border-slate-900 !bg-slate-900 !text-white",
+        isQuill && "!px-3 !py-2.5 !text-[11px] !normal-case !tracking-normal",
       )
     : `${tableHeadClass} px-2 py-2`;
-  const lineCellClass = embedded
-    ? "border-b border-slate-100 px-1.5 py-1 align-top text-[11px] text-ink-secondary"
-    : "border-b border-slate-100 px-2 py-1.5 align-top text-sm text-ink-secondary";
+  const lineCellClass = isQuill
+    ? "border-b border-slate-200 px-2 py-1.5 align-top text-[12px] text-ink-secondary"
+    : embedded
+      ? "border-b border-slate-100 px-1.5 py-1 align-top text-[11px] text-ink-secondary"
+      : "border-b border-slate-100 px-2 py-1.5 align-top text-sm text-ink-secondary";
 
   function updateLine(index: number, patch: Partial<LineItem>) {
     onChange(lines.map((l, i) => (i === index ? { ...l, ...patch } : l)));
@@ -315,10 +392,6 @@ export function LineItemsEditor({
     onChange(lines.filter((_, i) => i !== index).map((l, i) => ({ ...l, sortOrder: i })));
   }
 
-  function requestRemoveLine(index: number) {
-    setLineToRemove(index);
-  }
-
   const Wrapper = embedded ? "div" : "section";
 
   return (
@@ -351,15 +424,11 @@ export function LineItemsEditor({
           </div>
         ) : null}
       </div>
-      ) : !readOnly ? (
-        <div className="mb-2 flex flex-wrap justify-end gap-1">
+      ) : !readOnly && !isQuill ? (
+        <div className="mb-2 flex flex-wrap items-center justify-end gap-1.5">
           <Button type="button" variant="default" size="sm" className="h-7 px-2 text-[10px]" onClick={() => setPickerOpen(true)}>
             <Package className="h-3 w-3" />
             Catalogue
-          </Button>
-          <Button type="button" variant="secondary" size="sm" className="h-7 px-2 text-[10px]" onClick={addBlankLine}>
-            <Plus className="h-3 w-3" />
-            Ligne
           </Button>
           <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-[10px]" onClick={addNoteLine}>
             <StickyNote className="h-3 w-3" />
@@ -368,11 +437,11 @@ export function LineItemsEditor({
         </div>
       ) : null}
 
-      {lines.length === 0 && !readOnly ? (
+      {lines.length === 0 && !readOnly && !embedded ? (
         <div
           className={cn(
             "border-2 border-dashed border-black/[0.08] bg-[#FAFBFC] px-4 py-6 text-center",
-            embedded ? "border-slate-300" : "rounded-xl",
+            "rounded-xl",
           )}
         >
           <div className="flex flex-wrap justify-center gap-2">
@@ -386,98 +455,134 @@ export function LineItemsEditor({
           </div>
         </div>
       ) : (
-        <div className={cn(embedded ? "border border-slate-200" : "rounded-xl border border-black/[0.08]")}>
-          <div className="-mx-1 overflow-x-auto px-1 pb-1">
-            <table className={cn("w-full border-collapse", embedded ? "min-w-0 text-[11px]" : "min-w-[760px] text-sm")}>
+        <div className={cn(!isQuill && (embedded ? "border border-slate-200" : "rounded-xl border border-black/[0.08]"))}>
+          <div className={cn(!isQuill && "-mx-1 overflow-x-auto px-1 pb-1")}>
+            <table
+              className={cn(
+                "w-full border-collapse",
+                // Fixed layout so Article has a real column width and wraps like Excel.
+                (isQuill || embedded) && "table-fixed",
+                embedded ? "min-w-0 text-[11px]" : "min-w-[760px] text-sm",
+              )}
+            >
               <thead>
                 <tr>
-                  {!readOnly ? <th className={`${lineHeadClass} w-7`} /> : null}
-                  <th className={`${lineHeadClass} min-w-[9rem]`}>Désignation</th>
-                  <th className={`${lineHeadClass} w-20`}>Unité</th>
-                  <th className={`${lineHeadClass} w-12 text-right`}>Qté</th>
+                  {!readOnly && !isQuill ? <th className={`${lineHeadClass} w-7`} /> : null}
+                  <th className={cn(lineHeadClass, isQuill ? "w-auto" : "min-w-[9rem]")}>
+                    {isQuill ? t(lang, "item") : "Désignation"}
+                  </th>
+                  {!isQuill ? <th className={`${lineHeadClass} w-20`}>Unité</th> : null}
+                  <th className={`${lineHeadClass} ${isQuill ? "w-20" : "w-12"} text-right`}>
+                    {isQuill ? t(lang, "qty") : "Qté"}
+                  </th>
                   {!hideAmounts ? (
-                    <th className={`${lineHeadClass} w-[9.5rem] text-right`}>
-                      {showTtc ? "PU HT / TTC" : "PU HT"}
+                    <th className={`${lineHeadClass} ${isQuill ? "w-[9.5rem]" : "w-[9.5rem]"} text-right`}>
+                      {isQuill
+                        ? showTtc
+                          ? `${t(lang, "rate")} ${t(lang, "ht")} / ${t(lang, "ttc")}`
+                          : t(lang, "rate")
+                        : showTtc
+                          ? "PU HT / TTC"
+                          : "PU HT"}
                     </th>
                   ) : null}
                   {!hideAmounts ? (
-                    <th className={`${lineHeadClass} w-[7rem] text-right`}>Total</th>
+                    <th className={`${lineHeadClass} ${isQuill ? "w-28" : "w-[7rem]"} text-right`}>
+                      {isQuill ? t(lang, "amount") : "Total"}
+                    </th>
                   ) : null}
-                  {!readOnly ? <th className={`${lineHeadClass} w-8`} /> : null}
+                  {!readOnly ? <th className={`${lineHeadClass} w-24`} /> : null}
                 </tr>
               </thead>
               <tbody>
                 {lines.map((line, index) =>
                   line.isNote ? (
                     <tr key={index} className="bg-amber-50/50">
-                      {!readOnly ? <td className={lineCellClass} /> : null}
-                      <td colSpan={hideAmounts ? 3 : 5} className={lineCellClass}>
+                      {!readOnly && !isQuill ? <td className={lineCellClass} /> : null}
+                      <td
+                        colSpan={
+                          isQuill
+                            ? hideAmounts
+                              ? 2
+                              : 4
+                            : hideAmounts
+                              ? 3
+                              : 5
+                        }
+                        className={lineCellClass}
+                      >
                         <div className="flex items-start gap-2">
                           <StickyNote className="mt-2 h-4 w-4 shrink-0 text-amber-600" />
                           {readOnly ? (
-                            <p className="text-sm italic text-[#374151]">{line.designation}</p>
+                            <p className="whitespace-pre-wrap break-words text-sm italic text-[#374151]">
+                              {line.designation}
+                            </p>
                           ) : (
-                            <textarea
+                            <AutoGrowTextarea
                               className={cn(
                                 "min-h-[52px] flex-1 border border-amber-200/80 bg-white px-2 py-1.5 text-sm italic text-[#374151] outline-none focus:ring-1 focus:ring-amber-200",
-                                embedded ? "rounded-none" : "rounded-lg focus:ring-2",
+                                isQuill || !embedded ? "rounded-md" : "rounded-none",
                               )}
                               value={line.designation}
                               onChange={(e) => updateLine(index, { designation: e.target.value })}
                               placeholder="Note…"
-                              rows={2}
+                              minRows={2}
                             />
                           )}
                         </div>
                       </td>
                       {!readOnly ? (
                         <td className={lineCellClass}>
-                          <RowActions onDuplicate={() => duplicateLine(index)} onRemove={() => requestRemoveLine(index)} />
+                          <RowActions
+                            onDuplicate={() => duplicateLine(index)}
+                            onRemove={() => removeLine(index)}
+                          />
                         </td>
                       ) : null}
                     </tr>
                   ) : (
                     <tr key={index} className="group">
-                      {!readOnly ? (
+                      {!readOnly && !isQuill ? (
                         <td className={`${lineCellClass} text-center text-[10px] tabular-nums text-[#D1D5DB]`}>
                           {index + 1}
                         </td>
                       ) : null}
-                      <td className={lineCellClass}>
+                      <td className={cn(lineCellClass, "min-w-0", isQuill && "w-full")}>
                         {readOnly ? (
-                          line.designation
+                          <p className="whitespace-pre-wrap break-words">{line.designation}</p>
                         ) : (
-                          <input
-                            className={lineFieldClass}
+                          <AutoGrowTextarea
+                            className={cn(lineTextClass, "min-w-0 max-w-full")}
                             value={line.designation}
                             onChange={(e) => updateLine(index, { designation: e.target.value })}
-                            placeholder="Désignation de l'article ou service"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && index === lines.length - 1) {
-                                e.preventDefault();
-                                addBlankLine();
-                              }
-                            }}
+                            placeholder={
+                              isQuill
+                                ? "Description de l'article ou service…"
+                                : "Désignation de l'article ou service"
+                            }
+                            minRows={1}
                           />
                         )}
                       </td>
-                      <td className={lineCellClass}>
-                        {readOnly ? (
-                          line.unit
-                        ) : (
-                          <select
-                            className={lineFieldClass}
-                            value={line.unit}
-                            onChange={(e) => updateLine(index, { unit: e.target.value })}
-                          >
-                            {PRODUCT_UNITS.map((u) => (
-                              <option key={u} value={u}>
-                                {u}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </td>
+                      {!isQuill ? (
+                        <td className={lineCellClass}>
+                          {readOnly ? (
+                            line.unit
+                          ) : (
+                            <select
+                              className={lineNumericClass}
+                              value={line.unit}
+                              onChange={(e) => updateLine(index, { unit: e.target.value })}
+                            >
+                              {PRODUCT_UNITS.map((u) => (
+                                <option key={u} value={u}>
+                                  {u}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </td>
+                      ) : null}
                       <td className={`${lineCellClass} text-right`}>
                         {readOnly ? (
                           <span className="tabular-nums">{line.qty}</span>
@@ -485,7 +590,7 @@ export function LineItemsEditor({
                           <QtyInput
                             value={line.qty}
                             onChange={(qty) => updateLine(index, { qty })}
-                            className={lineFieldClass}
+                            className={lineNumericClass}
                           />
                         )}
                       </td>
@@ -497,7 +602,7 @@ export function LineItemsEditor({
                             readOnly={readOnly}
                             showTtc={showTtc}
                             onChangeHt={(v) => updateLine(index, { unitPriceHt: v })}
-                            inputClassName={lineFieldClass}
+                            inputClassName={lineNumericClass}
                           />
                         </td>
                       ) : null}
@@ -519,7 +624,7 @@ export function LineItemsEditor({
                         <td className={lineCellClass}>
                           <RowActions
                             onDuplicate={() => duplicateLine(index)}
-                            onRemove={() => requestRemoveLine(index)}
+                            onRemove={() => removeLine(index)}
                           />
                         </td>
                       ) : null}
@@ -528,9 +633,39 @@ export function LineItemsEditor({
                 )}
               </tbody>
             </table>
+            {embedded && !readOnly ? (
+              <button
+                type="button"
+                onClick={addBlankLine}
+                className={cn(
+                  "flex w-full items-center justify-center gap-1.5 py-2.5 text-[13px] font-medium",
+                  isQuill
+                    ? "border border-t-0 border-slate-200 bg-[#f3f4f6] text-slate-600 hover:bg-slate-200/70 hover:text-slate-800"
+                    : "border-t border-slate-200 bg-[#f3f4f6] text-slate-600 hover:bg-slate-200/70 hover:text-slate-800",
+                )}
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={2.25} />
+                Ligne
+              </button>
+            ) : null}
           </div>
         </div>
       )}
+
+      {embedded ? (
+        <div className="mt-3 mb-1 flex flex-col items-end gap-2 pr-2">
+          {isQuill && !readOnly ? (
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="text-[0.75em] font-medium text-slate-400 hover:text-teal-600"
+            >
+              Catalogue…
+            </button>
+          ) : null}
+          {cachetControls}
+        </div>
+      ) : null}
 
       {pickerOpen ? (
         <CatalogPicker
@@ -541,25 +676,9 @@ export function LineItemsEditor({
           onClose={() => setPickerOpen(false)}
           totalCount={catalog.length}
           vatRate={vatRate}
+          currency={currency}
         />
       ) : null}
-
-      <ConfirmDeleteDialog
-        open={lineToRemove != null}
-        onClose={() => setLineToRemove(null)}
-        title="Supprimer cette ligne ?"
-        description={
-          lineToRemove != null && lines[lineToRemove]?.isNote
-            ? "Cette note sera retirée du document."
-            : "Cette ligne sera retirée du document."
-        }
-        confirmLabel="Supprimer la ligne"
-        onConfirm={() => {
-          if (lineToRemove == null) return;
-          removeLine(lineToRemove);
-          setLineToRemove(null);
-        }}
-      />
     </Wrapper>
   );
 }
@@ -571,79 +690,26 @@ function RowActions({
   onDuplicate: () => void;
   onRemove: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
-
-  useEffect(() => {
-    if (!open || !buttonRef.current) {
-      setMenuPos(null);
-      return;
-    }
-    const rect = buttonRef.current.getBoundingClientRect();
-    const menuWidth = 144;
-    const menuHeight = 88;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openUp = spaceBelow < menuHeight + 8;
-    setMenuPos({
-      top: openUp ? rect.top - menuHeight - 4 : rect.bottom + 4,
-      left: Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)),
-    });
-  }, [open]);
-
   return (
-    <div className="relative flex justify-end opacity-60 transition group-hover:opacity-100">
+    <div className="flex items-center justify-end gap-1 opacity-90 transition group-hover:opacity-100">
       <button
-        ref={buttonRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="rounded-md p-1.5 text-[#9CA3AF] hover:bg-[#F3F4F6] hover:text-[#374151]"
-        aria-label="Actions sur la ligne"
-        aria-expanded={open}
+        onClick={onDuplicate}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900"
+        aria-label="Dupliquer la ligne"
+        title="Dupliquer"
       >
-        <MoreHorizontal className="h-3.5 w-3.5" />
+        <Copy className="h-4 w-4" strokeWidth={2.25} />
       </button>
-
-      {open && menuPos
-        ? createPortal(
-            <>
-              <button
-                type="button"
-                className="fixed inset-0 z-[80] cursor-default"
-                aria-label="Fermer le menu"
-                onClick={() => setOpen(false)}
-              />
-              <div
-                className="fixed z-[90] w-36 overflow-hidden rounded-lg border border-black/[0.08] bg-white py-1 shadow-lg"
-                style={{ top: menuPos.top, left: menuPos.left }}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    onDuplicate();
-                    setOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-ink transition hover:bg-black/[0.04]"
-                >
-                  <Copy className="h-3.5 w-3.5 text-[#9CA3AF]" />
-                  Dupliquer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onRemove();
-                    setOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Supprimer
-                </button>
-              </div>
-            </>,
-            document.body,
-          )
-        : null}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+        aria-label="Supprimer la ligne"
+        title="Supprimer"
+      >
+        <Trash2 className="h-4 w-4" strokeWidth={2.25} />
+      </button>
     </div>
   );
 }
@@ -656,6 +722,7 @@ function CatalogPicker({
   onClose,
   totalCount,
   vatRate,
+  currency = DEFAULT_CURRENCY,
 }: {
   catalog: CatalogItem[];
   query: string;
@@ -664,6 +731,7 @@ function CatalogPicker({
   onClose: () => void;
   totalCount: number;
   vatRate: number;
+  currency?: string;
 }) {
   const [tab, setTab] = useState<"list" | "create">(totalCount === 0 ? "create" : "list");
 
@@ -740,7 +808,7 @@ function CatalogPicker({
                         <p className="truncate text-xs text-[#6B7280]">{item.designation}</p>
                           <p className="mt-0.5 text-[11px] tabular-nums text-[#9CA3AF]">
                             {item.unit} · HT {formatMoney(item.unitPriceHt)} · TTC{" "}
-                            {formatMoney(htToTtc(item.unitPriceHt, vatRate))} MAD
+                            {formatMoney(htToTtc(item.unitPriceHt, vatRate))} {currency}
                           </p>
                       </div>
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand text-white">

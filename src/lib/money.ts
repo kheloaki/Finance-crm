@@ -53,8 +53,8 @@ export function computeDocumentTotals(
   return { totalHt, netHt, grossTtc, vatAmount, totalTtc, netToPay };
 }
 
-export function formatMoney(value: number): string {
-  return new Intl.NumberFormat("fr-MA", {
+export function formatMoney(value: number, locale = "fr-MA"): string {
+  return new Intl.NumberFormat(locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);

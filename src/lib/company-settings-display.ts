@@ -1,5 +1,7 @@
 import type { CompanySettings } from "@/lib/convex-types";
+import { DEFAULT_CURRENCY } from "@/lib/currencies";
 import { DEFAULT_DOCUMENT_COLOR } from "@/lib/document-colors";
+import { DEFAULT_DOCUMENT_LANGUAGE } from "@/lib/document-i18n";
 import { DEFAULT_DOCUMENT_TEMPLATE } from "@/lib/document-templates";
 
 /** Fictional company — used only in template previews (settings, design picker). */
@@ -18,6 +20,8 @@ export const SAMPLE_COMPANY_SETTINGS: CompanySettings = {
   sellerContact: "",
   documentTemplate: DEFAULT_DOCUMENT_TEMPLATE,
   documentColor: DEFAULT_DOCUMENT_COLOR,
+  currency: DEFAULT_CURRENCY,
+  documentLanguage: DEFAULT_DOCUMENT_LANGUAGE,
 };
 
 function filled(value?: string | null): value is string {
@@ -45,6 +49,8 @@ export function resolveDocumentCompanySettings(
     cachetUrl: settings?.cachetUrl,
     documentTemplate: settings?.documentTemplate,
     documentColor: settings?.documentColor,
+    currency: settings?.currency,
+    documentLanguage: settings?.documentLanguage,
   };
 }
 
@@ -71,6 +77,8 @@ export function resolvePreviewCompanySettings(
     cachetUrl: s.cachetUrl,
     documentTemplate: s.documentTemplate ?? sample.documentTemplate,
     documentColor: s.documentColor ?? sample.documentColor,
+    currency: s.currency ?? sample.currency,
+    documentLanguage: s.documentLanguage ?? sample.documentLanguage,
   };
 }
 

@@ -13,10 +13,11 @@ import type {
   Supplier,
 } from "@/lib/convex-types";
 import {
-  DocumentAmountDisplayButton,
-  DocumentCachetButton,
   DocumentInlineEditor,
 } from "@/components/documents/DocumentInlineEditor";
+import { DocumentBrandingSheet, type BrandingFocus } from "@/components/documents/DocumentBrandingSheet";
+import { DocumentDesignDialog } from "@/components/documents/DocumentDesignDialog";
+import { DocumentLocaleControls } from "@/components/documents/DocumentLocaleControls";
 import { UnsavedChangesDialog } from "@/components/documents/UnsavedChangesDialog";
 import { exportDocumentPdf } from "@/lib/pdf/document-pdf";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,6 @@ import { projectIdForSave } from "@/components/projects/ProjectSelect";
 import {
   documentPath,
   isSupplierDocument,
-  normalizeAmountDisplay,
   type AmountDisplay,
   type DocumentType,
   type LineItem,
@@ -35,8 +35,15 @@ import {
   snapshotDocumentForm,
   type DocumentFormSnapshot,
 } from "@/lib/document-form-snapshot";
-import { computeDocumentTotals, DEFAULT_VAT_RATE } from "@/lib/money";
+import {
+  buildCompanySettingsUpsertArgs,
+  type CompanyBrandingPatch,
+} from "@/lib/company-settings-upsert";
+import { DEFAULT_DOCUMENT_COLOR, normalizeDocumentColor } from "@/lib/document-colors";
+import { DEFAULT_DOCUMENT_TEMPLATE, normalizeDocumentTemplate } from "@/lib/document-templates";
+import { computeDocumentTotals } from "@/lib/money";
 import { todayIso } from "@/lib/utils";
+import { Palette } from "lucide-react";
 
 type Props = {
   documentType: DocumentType;
@@ -58,16 +65,22 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
   const settings = useQuery(api.companySettings.get) as CompanySettings | null | undefined;
 
   const [date, setDate] = useState(todayIso());
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState(() =>
+    documentType === "facture" ? todayIso() : "",
+  );
   const [reference, setReference] = useState("");
   const [clientId, setClientId] = useState("");
   const [supplierId, setSupplierId] = useState("");
-  const [vatRate, setVatRate] = useState(DEFAULT_VAT_RATE);
+  const [guestClientName, setGuestClientName] = useState("");
+  const [guestSupplierName, setGuestSupplierName] = useState("");
+  const [guestIce, setGuestIce] = useState("");
+  const [guestAddress, setGuestAddress] = useState("");
+  const [guestCity, setGuestCity] = useState("");
+  const [vatRate, setVatRate] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [deposit, setDeposit] = useState(0);
   const [notes, setNotes] = useState("");
   const [showCachet, setShowCachet] = useState(false);
-  const [amountDisplay, setAmountDisplay] = useState<AmountDisplay>("ht_ttc");
   const [projectId, setProjectId] = useState("");
   const [lines, setLines] = useState<LineItem[]>([]);
   const [pending, setPending] = useState(false);
@@ -80,6 +93,11 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
   const [deleteDraftOpen, setDeleteDraftOpen] = useState(false);
   const [cancelDocOpen, setCancelDocOpen] = useState(false);
   const [destructivePending, setDestructivePending] = useState(false);
+  const [brandingOpen, setBrandingOpen] = useState(false);
+  const [brandingFocus, setBrandingFocus] = useState<BrandingFocus | undefined>();
+  const [designOpen, setDesignOpen] = useState(false);
+  const [brandingPending, setBrandingPending] = useState(false);
+  const [brandingError, setBrandingError] = useState("");
   const hydratedDocIdRef = useRef<string | null>(null);
   const skipHydrateForIdRef = useRef<string | null>(null);
 
@@ -96,6 +114,34 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
   const cancelDoc = useMutation(api.documents.cancel);
   const duplicateDoc = useMutation(api.documents.duplicate);
   const removeDoc = useMutation(api.documents.remove);
+  const upsertSettings = useMutation(api.companySettings.upsert);
+
+  const openBranding = useCallback((focus?: BrandingFocus) => {
+    setBrandingFocus(focus);
+    setBrandingError("");
+    setBrandingOpen(true);
+  }, []);
+
+  const saveBranding = useCallback(
+    async (patch: CompanyBrandingPatch) => {
+      setBrandingPending(true);
+      setBrandingError("");
+      try {
+        await upsertSettings(buildCompanySettingsUpsertArgs(settings, patch));
+        if (patch.cachetStorageId && !patch.removeCachet) {
+          setShowCachet(true);
+        }
+        if (patch.removeCachet) {
+          setShowCachet(false);
+        }
+      } catch {
+        setBrandingError("Impossible d'enregistrer le modèle société. Réessayez.");
+      } finally {
+        setBrandingPending(false);
+      }
+    },
+    [settings, upsertSettings],
+  );
 
   useEffect(() => {
     if (!isNew || projectId) return;
@@ -119,16 +165,23 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
     if (hydratedDocIdRef.current === existing._id) return;
     hydratedDocIdRef.current = existing._id;
     setDate(existing.date);
-    setDueDate(existing.dueDate ?? "");
+    const hydratedDue =
+      existing.dueDate ??
+      (existing.documentType === "facture" ? existing.date : "");
+    setDueDate(hydratedDue);
     setReference(existing.reference);
     setClientId(existing.clientId ?? "");
     setSupplierId(existing.supplierId ?? "");
+    setGuestClientName(existing.guestClientName ?? "");
+    setGuestSupplierName(existing.guestSupplierName ?? "");
+    setGuestIce(existing.guestIce ?? "");
+    setGuestAddress(existing.guestAddress ?? "");
+    setGuestCity(existing.guestCity ?? "");
     setVatRate(existing.vatRate);
     setDiscount(existing.discount);
     setDeposit(existing.deposit);
     setNotes(existing.notes);
     setShowCachet(existing.showCachet ?? false);
-    setAmountDisplay(normalizeAmountDisplay(existing.amountDisplay));
     setProjectId(existing.projectId ?? "");
     const nextLines = existing.lines.map((l) => ({
       catalogItemId: l.catalogItemId,
@@ -144,16 +197,21 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
     setSavedSnapshot(
       snapshotDocumentForm({
         date: existing.date,
-        dueDate: existing.dueDate ?? "",
+        dueDate: hydratedDue,
         reference: existing.reference,
         clientId: existing.clientId ?? "",
         supplierId: existing.supplierId ?? "",
+        guestClientName: existing.guestClientName ?? "",
+        guestSupplierName: existing.guestSupplierName ?? "",
+        guestIce: existing.guestIce ?? "",
+        guestAddress: existing.guestAddress ?? "",
+        guestCity: existing.guestCity ?? "",
         vatRate: existing.vatRate,
         discount: existing.discount,
         deposit: existing.deposit,
         notes: existing.notes,
         showCachet: existing.showCachet ?? false,
-        amountDisplay: normalizeAmountDisplay(existing.amountDisplay),
+        amountDisplay: (existing.vatRate > 0 ? "ht_ttc" : "ht") as AmountDisplay,
         projectId: existing.projectId ?? "",
         lines: nextLines,
       }),
@@ -161,6 +219,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
   }, [existing]);
 
   const readOnly = existing?.status === "issued" || existing?.status === "cancelled";
+  const amountDisplay: AmountDisplay = vatRate > 0 ? "ht_ttc" : "ht";
 
   const formSnapshot: DocumentFormSnapshot = useMemo(
     () => ({
@@ -169,6 +228,11 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
       reference,
       clientId,
       supplierId,
+      guestClientName,
+      guestSupplierName,
+      guestIce,
+      guestAddress,
+      guestCity,
       vatRate,
       discount,
       deposit,
@@ -184,6 +248,11 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
       reference,
       clientId,
       supplierId,
+      guestClientName,
+      guestSupplierName,
+      guestIce,
+      guestAddress,
+      guestCity,
       vatRate,
       discount,
       deposit,
@@ -207,23 +276,34 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
   const selectedSupplier = suppliers?.find((s) => s._id === supplierId);
 
   const counterpartyName = isSupplier
-    ? (selectedSupplier?.name ?? existing?.supplier?.name ?? "")
-    : (selectedClient?.name ?? existing?.client?.name ?? "");
-  const counterpartyIce = isSupplier
-    ? (selectedSupplier?.ice ?? existing?.supplier?.ice ?? "")
-    : (selectedClient?.ice ?? existing?.client?.ice ?? "");
+    ? selectedSupplier?.name || guestSupplierName || existing?.counterpartyName || ""
+    : selectedClient?.name || guestClientName || existing?.counterpartyName || "";
+  const usingGuest = isSupplier
+    ? !supplierId && !!guestSupplierName.trim()
+    : !clientId && !!guestClientName.trim();
+  const counterpartyIce = usingGuest
+    ? guestIce
+    : isSupplier
+      ? (selectedSupplier?.ice ?? existing?.supplier?.ice ?? "")
+      : (selectedClient?.ice ?? existing?.client?.ice ?? "");
   const counterpartyRepresentative = isSupplier
     ? (selectedSupplier?.representative ?? existing?.supplier?.representative ?? "")
     : (selectedClient?.representative ?? existing?.client?.representative ?? "");
-  const counterpartyAddress = isSupplier
-    ? (selectedSupplier?.address ?? existing?.supplier?.address ?? "")
-    : (selectedClient?.address ?? existing?.client?.address ?? "");
-  const counterpartyCity = isSupplier
-    ? (selectedSupplier?.city ?? existing?.supplier?.city ?? "")
-    : (selectedClient?.city ?? existing?.client?.city ?? "");
+  const counterpartyAddress = usingGuest
+    ? guestAddress
+    : isSupplier
+      ? (selectedSupplier?.address ?? existing?.supplier?.address ?? "")
+      : (selectedClient?.address ?? existing?.client?.address ?? "");
+  const counterpartyCity = usingGuest
+    ? guestCity
+    : isSupplier
+      ? (selectedSupplier?.city ?? existing?.supplier?.city ?? "")
+      : (selectedClient?.city ?? existing?.client?.city ?? "");
 
   const hasProductLines = lines.some((l) => !l.isNote && l.designation.trim());
-  const hasCounterparty = isSupplier ? !!supplierId : !!clientId;
+  const hasCounterparty = isSupplier
+    ? !!supplierId || !!guestSupplierName.trim()
+    : !!clientId || !!guestClientName.trim();
 
   const totals = useMemo(
     () => computeDocumentTotals(lines, vatRate, discount, deposit),
@@ -231,7 +311,6 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
   );
 
   const number = existing?.number ?? nextNumber ?? "…";
-  const hasCachetAsset = !!settings?.cachetUrl;
 
   const requestNavigation = useCallback(
     (href: string) => {
@@ -248,7 +327,11 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
   const saveDraft = useCallback(
     async (opts?: { navigateTo?: string }): Promise<boolean> => {
       if (!hasCounterparty) {
-        setError(isSupplier ? "Sélectionnez un fournisseur." : "Sélectionnez un client.");
+        setError(
+          isSupplier
+            ? "Sélectionnez ou saisissez un fournisseur."
+            : "Sélectionnez ou saisissez un client.",
+        );
         return false;
       }
       if (!hasProductLines) {
@@ -265,6 +348,11 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
           reference,
           clientId: clientId ? (clientId as Id<"clients">) : undefined,
           supplierId: supplierId ? (supplierId as Id<"suppliers">) : undefined,
+          guestClientName: guestClientName.trim() || undefined,
+          guestSupplierName: guestSupplierName.trim() || undefined,
+          guestIce: guestIce.trim() || undefined,
+          guestAddress: guestAddress.trim() || undefined,
+          guestCity: guestCity.trim() || undefined,
           vatRate,
           discount,
           deposit,
@@ -325,6 +413,11 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
       reference,
       clientId,
       supplierId,
+      guestClientName,
+      guestSupplierName,
+      guestIce,
+      guestAddress,
+      guestCity,
       vatRate,
       discount,
       deposit,
@@ -437,7 +530,11 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
   async function handlePdf() {
     if (!settings) return;
     if (!hasCounterparty) {
-      setError(isSupplier ? "Sélectionnez un fournisseur." : "Sélectionnez un client.");
+      setError(
+        isSupplier
+          ? "Sélectionnez ou saisissez un fournisseur."
+          : "Sélectionnez ou saisissez un client.",
+      );
       return;
     }
     if (!hasProductLines) {
@@ -486,6 +583,16 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
         supplierId={supplierId}
         onClientChange={setClientId}
         onSupplierChange={setSupplierId}
+        guestClientName={guestClientName}
+        guestSupplierName={guestSupplierName}
+        onGuestClientNameChange={setGuestClientName}
+        onGuestSupplierNameChange={setGuestSupplierName}
+        guestIce={guestIce}
+        guestAddress={guestAddress}
+        guestCity={guestCity}
+        onGuestIceChange={setGuestIce}
+        onGuestAddressChange={setGuestAddress}
+        onGuestCityChange={setGuestCity}
         clients={clients}
         suppliers={suppliers}
         projectId={projectId}
@@ -504,6 +611,7 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
         onNotesChange={setNotes}
         settings={settings}
         showCachet={showCachet}
+        onShowCachetChange={setShowCachet}
         amountDisplay={amountDisplay}
         readOnly={readOnly}
         isNew={isNew}
@@ -519,8 +627,35 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
         totals={totals}
         autoOpenCatalog={false}
         error={error}
+        onOpenBranding={readOnly ? undefined : openBranding}
+        localeControls={
+          !readOnly ? (
+            <DocumentLocaleControls
+              currency={settings?.currency}
+              language={settings?.documentLanguage}
+              disabled={brandingPending}
+              onCurrencyChange={(currency) => void saveBranding({ currency })}
+              onLanguageChange={(documentLanguage) => void saveBranding({ documentLanguage })}
+            />
+          ) : (
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium tabular-nums text-slate-600">
+              {(settings?.documentLanguage ?? "fr").toUpperCase()} · {settings?.currency ?? "MAD"}
+            </span>
+          )
+        }
         toolbar={
           <>
+            {!readOnly ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => openBranding()}
+                title="Logo, cachet et design"
+              >
+                <Palette className="h-3.5 w-3.5" />
+                Modèle société
+              </Button>
+            ) : null}
             {!readOnly ? (
               <Button onClick={() => void saveDraftAndStay()} disabled={pending || isSaved}>
                 {pending ? "Enregistrement…" : "Enregistrer"}
@@ -564,28 +699,15 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
           !readOnly ? (
             <section className="shrink-0 border-t border-black/[0.08] bg-white/95 px-3 py-2 backdrop-blur-md sm:px-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-xs sm:text-sm">
-                    {pending ? (
-                      "Enregistrement…"
-                    ) : isDirty ? (
-                      <span className="text-amber-700">Modifications non enregistrées</span>
-                    ) : isSaved ? (
-                      <span className="text-emerald-700">Enregistré</span>
-                    ) : null}
-                  </p>
-                  <DocumentCachetButton
-                    showCachet={showCachet}
-                    hasCachetAsset={hasCachetAsset}
-                    readOnly={readOnly}
-                    onToggle={() => setShowCachet((v) => !v)}
-                  />
-                  <DocumentAmountDisplayButton
-                    amountDisplay={amountDisplay}
-                    readOnly={readOnly}
-                    onChange={setAmountDisplay}
-                  />
-                </div>
+                <p className="text-xs sm:text-sm">
+                  {pending ? (
+                    "Enregistrement…"
+                  ) : isDirty ? (
+                    <span className="text-amber-700">Modifications non enregistrées</span>
+                  ) : isSaved ? (
+                    <span className="text-emerald-700">Enregistré</span>
+                  ) : null}
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {existing?.status === "draft" ? (
                     <Button variant="destructive" size="sm" onClick={() => setDeleteDraftOpen(true)}>
@@ -615,6 +737,49 @@ export function DocumentFormPage({ documentType, documentId }: Props) {
         }}
         onSave={handleSaveAndLeave}
         onDiscard={handleDiscardAndLeave}
+      />
+
+      <DocumentBrandingSheet
+        open={brandingOpen}
+        onClose={() => {
+          setBrandingOpen(false);
+          setBrandingFocus(undefined);
+        }}
+        settings={settings}
+        pending={brandingPending}
+        error={brandingError}
+        initialFocus={brandingFocus}
+        onSaveBranding={saveBranding}
+        onOpenDesign={() => {
+          setDesignOpen(true);
+        }}
+      />
+
+      <DocumentDesignDialog
+        open={designOpen}
+        onClose={() => setDesignOpen(false)}
+        settings={settings}
+        initialTemplateId={normalizeDocumentTemplate(
+          settings?.documentTemplate ?? DEFAULT_DOCUMENT_TEMPLATE,
+        )}
+        initialColorId={normalizeDocumentColor(settings?.documentColor ?? DEFAULT_DOCUMENT_COLOR)}
+        applying={brandingPending}
+        previewOverride={{
+          documentType,
+          number,
+          date,
+          dueDate: dueDate || undefined,
+          reference,
+          lines,
+          vatRate,
+          discount,
+          deposit,
+          notes,
+        }}
+        onApply={async (templateId, colorId) => {
+          await saveBranding({ documentTemplate: templateId, documentColor: colorId });
+          setDesignOpen(false);
+        }}
       />
 
       <ConfirmDeleteDialog

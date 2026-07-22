@@ -52,6 +52,8 @@ export const upsert = mutation({
     removeCachet: v.optional(v.boolean()),
     documentTemplate: v.optional(documentTemplateValidator),
     documentColor: v.optional(documentColorValidator),
+    currency: v.optional(v.string()),
+    documentLanguage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { organizationId } = await requireOrg(ctx);
@@ -104,8 +106,11 @@ export const upsert = mutation({
       cachetStorageId: args.removeCachet
         ? undefined
         : args.cachetStorageId ?? existing?.cachetStorageId,
-      documentTemplate: args.documentTemplate ?? existing?.documentTemplate ?? "ruby",
-      documentColor: args.documentColor ?? existing?.documentColor ?? "crimson",
+      documentTemplate: args.documentTemplate ?? existing?.documentTemplate ?? "quill",
+      documentColor: args.documentColor ?? existing?.documentColor ?? "navy",
+      currency: args.currency?.trim().toUpperCase() || existing?.currency || "MAD",
+      documentLanguage:
+        args.documentLanguage?.trim().toLowerCase() || existing?.documentLanguage || "fr",
       updatedAt: now,
     };
 
@@ -118,5 +123,29 @@ export const upsert = mutation({
       organizationId,
       ...data,
     });
+  },
+});
+
+/** Switch company document design to Quill (Invoice Ninja–style default). */
+export const ensureQuillDesign = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const { organizationId } = await requireOrg(ctx);
+    const existing = await ctx.db
+      .query("companySettings")
+      .withIndex("by_org", (q) => q.eq("organizationId", organizationId))
+      .first();
+    if (!existing) return { updated: false as const };
+
+    if (existing.documentTemplate === "quill" && existing.documentColor === "navy") {
+      return { updated: false as const };
+    }
+
+    await ctx.db.patch(existing._id, {
+      documentTemplate: "quill",
+      documentColor: "navy",
+      updatedAt: Date.now(),
+    });
+    return { updated: true as const };
   },
 });

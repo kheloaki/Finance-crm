@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { MobileBottomBar } from "@/components/layout/MobileBottomBar";
+import { EnsureQuillDesign } from "@/components/layout/EnsureQuillDesign";
 import { GlobalSearchHost } from "@/components/layout/GlobalSearch";
 import { OrgScopedContent } from "@/components/layout/OrgScopedContent";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -26,6 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <ShellProvider>
+      <EnsureQuillDesign />
       <div className="app-backdrop app-shell-root flex min-h-[100svh] flex-col gap-0.5 p-0.5">
         <TopBar />
         <div className="flex min-h-0 min-w-0 flex-1">

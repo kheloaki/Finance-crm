@@ -1,12 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Stamp } from "lucide-react";
 import { buildPreviewContext, resolveTemplateId } from "@/components/documents/preview/build-context";
 import { DocumentEditProvider } from "@/components/documents/preview/document-edit-context";
 import { LAYOUT_REGISTRY } from "@/components/documents/preview/layouts";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { CatalogItem, Client, CompanySettings, Supplier } from "@/lib/convex-types";
 import {
   DOCUMENT_LABELS,
@@ -33,6 +31,16 @@ type Props = {
   supplierId: string;
   onClientChange: (id: string) => void;
   onSupplierChange: (id: string) => void;
+  guestClientName: string;
+  guestSupplierName: string;
+  onGuestClientNameChange: (name: string) => void;
+  onGuestSupplierNameChange: (name: string) => void;
+  guestIce: string;
+  guestAddress: string;
+  guestCity: string;
+  onGuestIceChange: (v: string) => void;
+  onGuestAddressChange: (v: string) => void;
+  onGuestCityChange: (v: string) => void;
   clients: Client[] | undefined;
   suppliers: Supplier[] | undefined;
   projectId: string;
@@ -51,6 +59,7 @@ type Props = {
   onNotesChange: (v: string) => void;
   settings?: CompanySettings | null;
   showCachet: boolean;
+  onShowCachetChange: (show: boolean) => void;
   amountDisplay: AmountDisplay;
   readOnly: boolean;
   isNew: boolean;
@@ -65,6 +74,9 @@ type Props = {
   toolbar: ReactNode;
   error?: string;
   footer?: ReactNode;
+  onOpenBranding?: (focus?: "logo" | "cachet" | "design" | "seller" | "footer" | "locale") => void;
+  /** Compact language + currency selectors in the top bar */
+  localeControls?: ReactNode;
 };
 
 export function DocumentInlineEditor(props: Props) {
@@ -82,6 +94,16 @@ export function DocumentInlineEditor(props: Props) {
     supplierId,
     onClientChange,
     onSupplierChange,
+    guestClientName,
+    guestSupplierName,
+    onGuestClientNameChange,
+    onGuestSupplierNameChange,
+    guestIce,
+    guestAddress,
+    guestCity,
+    onGuestIceChange,
+    onGuestAddressChange,
+    onGuestCityChange,
     clients,
     suppliers,
     projectId,
@@ -100,6 +122,7 @@ export function DocumentInlineEditor(props: Props) {
     onNotesChange,
     settings,
     showCachet,
+    onShowCachetChange,
     amountDisplay,
     readOnly,
     isNew,
@@ -108,22 +131,36 @@ export function DocumentInlineEditor(props: Props) {
     toolbar,
     error,
     footer,
+    onOpenBranding,
+    localeControls,
   } = props;
 
   const docLabel = DOCUMENT_LABELS[documentType];
   const selectedClient = clients?.find((c) => c._id === clientId);
   const selectedSupplier = suppliers?.find((s) => s._id === supplierId);
   const counterpartyName = isSupplier
-    ? (selectedSupplier?.name ?? "")
-    : (selectedClient?.name ?? "");
-  const counterpartyIce = isSupplier ? selectedSupplier?.ice : selectedClient?.ice;
+    ? (selectedSupplier?.name ?? guestSupplierName)
+    : (selectedClient?.name ?? guestClientName);
+  const usingGuest =
+    isSupplier ? !selectedSupplier && !!guestSupplierName.trim() : !selectedClient && !!guestClientName.trim();
+  const counterpartyIce = usingGuest
+    ? guestIce || undefined
+    : isSupplier
+      ? selectedSupplier?.ice
+      : selectedClient?.ice;
   const counterpartyRep = isSupplier
     ? selectedSupplier?.representative
     : selectedClient?.representative;
-  const counterpartyAddress = isSupplier
-    ? selectedSupplier?.address
-    : selectedClient?.address;
-  const counterpartyCity = isSupplier ? selectedSupplier?.city : selectedClient?.city;
+  const counterpartyAddress = usingGuest
+    ? guestAddress || undefined
+    : isSupplier
+      ? selectedSupplier?.address
+      : selectedClient?.address;
+  const counterpartyCity = usingGuest
+    ? guestCity || undefined
+    : isSupplier
+      ? selectedSupplier?.city
+      : selectedClient?.city;
 
   const templateId = resolveTemplateId(undefined, settings);
   const Layout = LAYOUT_REGISTRY[templateId];
@@ -163,8 +200,30 @@ export function DocumentInlineEditor(props: Props) {
     isSupplier,
     clientId,
     supplierId,
+    guestClientName,
+    guestSupplierName,
+    guestIce,
+    guestAddress,
+    guestCity,
+    onGuestIceChange,
+    onGuestAddressChange,
+    onGuestCityChange,
     onClientChange,
     onSupplierChange,
+    onCounterpartyChange: (next: { id: string; guestName: string }) => {
+      if (isSupplier) {
+        onSupplierChange(next.id);
+        onGuestSupplierNameChange(next.guestName);
+      } else {
+        onClientChange(next.id);
+        onGuestClientNameChange(next.guestName);
+      }
+      if (next.id) {
+        onGuestIceChange("");
+        onGuestAddressChange("");
+        onGuestCityChange("");
+      }
+    },
     clients,
     suppliers,
     projectId,
@@ -184,6 +243,9 @@ export function DocumentInlineEditor(props: Props) {
     amountDisplay,
     settings,
     autoOpenCatalog,
+    showCachet,
+    onShowCachetChange,
+    onOpenBranding,
   };
 
   return (
@@ -199,6 +261,7 @@ export function DocumentInlineEditor(props: Props) {
             ) : isNew ? (
               <Badge className={STATUS_BADGE_CLASS.draft}>{STATUS_LABELS.draft}</Badge>
             ) : null}
+            {localeControls}
           </div>
           <div className="flex flex-wrap items-center gap-2">{toolbar}</div>
         </div>
@@ -218,65 +281,5 @@ export function DocumentInlineEditor(props: Props) {
 
       {footer}
     </div>
-  );
-}
-
-export function DocumentCachetButton({
-  showCachet,
-  hasCachetAsset,
-  readOnly,
-  onToggle,
-}: {
-  showCachet: boolean;
-  hasCachetAsset: boolean;
-  readOnly: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <Button
-      type="button"
-      variant={showCachet ? "default" : "secondary"}
-      size="sm"
-      disabled={!hasCachetAsset || readOnly}
-      title={
-        !hasCachetAsset
-          ? "Téléversez un cachet dans Modèle société"
-          : showCachet
-            ? "Retirer le cachet"
-            : "Ajouter le cachet"
-      }
-      onClick={onToggle}
-    >
-      <Stamp className="h-3.5 w-3.5" />
-      {showCachet ? "Cachet" : "Cachet"}
-    </Button>
-  );
-}
-
-export function DocumentAmountDisplayButton({
-  amountDisplay,
-  readOnly,
-  onChange,
-}: {
-  amountDisplay: AmountDisplay;
-  readOnly: boolean;
-  onChange: (v: AmountDisplay) => void;
-}) {
-  const showTtc = amountDisplay === "ht_ttc";
-  return (
-    <Button
-      type="button"
-      variant={showTtc ? "default" : "secondary"}
-      size="sm"
-      disabled={readOnly}
-      title={
-        showTtc
-          ? "Afficher uniquement les montants HT"
-          : "Afficher HT et TTC"
-      }
-      onClick={() => onChange(showTtc ? "ht" : "ht_ttc")}
-    >
-      {showTtc ? "HT + TTC" : "HT seul"}
-    </Button>
   );
 }

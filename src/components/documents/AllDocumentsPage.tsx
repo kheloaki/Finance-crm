@@ -107,8 +107,9 @@ export function AllDocumentsPage() {
   );
 
   async function handleExportPdf(doc: EnrichedDocument) {
-    const counterparty = doc.client ?? doc.supplier;
-    if (!settings || !counterparty || exportingId) return;
+    const saved = doc.client ?? doc.supplier;
+    const guestName = doc.guestClientName?.trim() || doc.guestSupplierName?.trim();
+    if (!settings || (!saved && !guestName) || exportingId) return;
 
     setExportingId(doc._id);
     try {
@@ -136,11 +137,11 @@ export function AllDocumentsPage() {
         showCachet: doc.showCachet ?? false,
         amountDisplay: doc.amountDisplay === "ht" ? "ht" : "ht_ttc",
         counterparty: {
-          name: counterparty.name,
-          ice: counterparty.ice || undefined,
-          representative: counterparty.representative || undefined,
-          address: counterparty.address || undefined,
-          city: counterparty.city || undefined,
+          name: saved?.name || guestName || doc.counterpartyName,
+          ice: saved?.ice || doc.guestIce || undefined,
+          representative: saved?.representative || undefined,
+          address: saved?.address || doc.guestAddress || undefined,
+          city: saved?.city || doc.guestCity || undefined,
         },
         settings,
       });

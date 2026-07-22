@@ -6,6 +6,11 @@ export type DocumentFormSnapshot = {
   reference: string;
   clientId: string;
   supplierId: string;
+  guestClientName: string;
+  guestSupplierName: string;
+  guestIce: string;
+  guestAddress: string;
+  guestCity: string;
   vatRate: number;
   discount: number;
   deposit: number;
@@ -40,6 +45,8 @@ export function isDocumentFormDirty(
     const hasContent =
       !!current.clientId ||
       !!current.supplierId ||
+      !!current.guestClientName.trim() ||
+      !!current.guestSupplierName.trim() ||
       current.notes.trim() !== "" ||
       current.discount > 0 ||
       current.deposit > 0 ||

@@ -29,8 +29,19 @@ import {
   normalizeDocumentTemplate,
   type DocumentTemplateId,
 } from "@/lib/document-templates";
+import {
+  DEFAULT_CURRENCY,
+  listCurrencies,
+  normalizeCurrency,
+} from "@/lib/currencies";
+import {
+  DEFAULT_DOCUMENT_LANGUAGE,
+  DOCUMENT_LANGUAGES,
+  normalizeDocumentLanguage,
+} from "@/lib/document-i18n";
 import { resolvePreviewCompanySettings } from "@/lib/company-settings-display";
 import { hasSellerFooter } from "@/lib/seller-footer";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const SAMPLE_LINES = [
   {
@@ -79,6 +90,8 @@ export default function SettingsPage() {
     removeCachet: false,
     documentTemplate: DEFAULT_DOCUMENT_TEMPLATE as DocumentTemplateId,
     documentColor: DEFAULT_DOCUMENT_COLOR as DocumentColorId,
+    currency: DEFAULT_CURRENCY,
+    documentLanguage: DEFAULT_DOCUMENT_LANGUAGE,
   });
   const orgId = org?._id;
   const orgName = org?.name;
@@ -100,6 +113,8 @@ export default function SettingsPage() {
     removeCachet: false,
     documentTemplate: DEFAULT_DOCUMENT_TEMPLATE as DocumentTemplateId,
     documentColor: DEFAULT_DOCUMENT_COLOR as DocumentColorId,
+    currency: DEFAULT_CURRENCY,
+    documentLanguage: DEFAULT_DOCUMENT_LANGUAGE,
   });
 
   useEffect(() => {
@@ -131,6 +146,8 @@ export default function SettingsPage() {
       removeCachet: false,
       documentTemplate: normalizeDocumentTemplate(settings?.documentTemplate),
       documentColor: normalizeDocumentColor(settings?.documentColor),
+      currency: normalizeCurrency(settings?.currency),
+      documentLanguage: normalizeDocumentLanguage(settings?.documentLanguage),
     });
     setLogoPreview(settings?.logoUrl);
     setCachetPreview(settings?.cachetUrl);
@@ -154,8 +171,19 @@ export default function SettingsPage() {
         cachetUrl: cachetPreview,
         documentTemplate: form.documentTemplate,
         documentColor: form.documentColor,
+        currency: form.currency,
+        documentLanguage: form.documentLanguage,
       }),
     [form, logoPreview, cachetPreview],
+  );
+
+  const currencyOptions = useMemo(
+    () => listCurrencies().map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` })),
+    [],
+  );
+  const languageOptions = useMemo(
+    () => DOCUMENT_LANGUAGES.map((l) => ({ value: l.id, label: l.label })),
+    [],
   );
 
   const selectedTemplate = getTemplateMeta(form.documentTemplate);
@@ -183,6 +211,8 @@ export default function SettingsPage() {
         removeCachet: form.removeCachet,
         documentTemplate: form.documentTemplate,
         documentColor: form.documentColor,
+        currency: form.currency,
+        documentLanguage: form.documentLanguage,
       });
       setSaved(true);
       if (form.removeLogo) {
@@ -221,6 +251,8 @@ export default function SettingsPage() {
         removeCachet: nextForm.removeCachet,
         documentTemplate: templateId,
         documentColor: colorId,
+        currency: nextForm.currency,
+        documentLanguage: nextForm.documentLanguage,
       });
       setSaved(true);
       setDesignOpen(false);
@@ -284,6 +316,38 @@ export default function SettingsPage() {
                         </button>
                       </div>
                     </div>
+                  </section>
+
+                  <section className="border-t border-black/[0.06] pt-6">
+                    <h2 className={sectionTitleClass}>Devise & langue</h2>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Devise</Label>
+                        <SearchableSelect
+                          options={currencyOptions}
+                          value={form.currency}
+                          disabled={pending}
+                          onChange={(value) => setForm((f) => ({ ...f, currency: value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Langue du document</Label>
+                        <SearchableSelect
+                          options={languageOptions}
+                          value={form.documentLanguage}
+                          disabled={pending}
+                          onChange={(value) =>
+                            setForm((f) => ({
+                              ...f,
+                              documentLanguage: normalizeDocumentLanguage(value),
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-[#6B7280]">
+                      La langue traduit les libellés des documents (pas toute l&apos;application).
+                    </p>
                   </section>
 
                   <section className="border-t border-black/[0.06] pt-6">

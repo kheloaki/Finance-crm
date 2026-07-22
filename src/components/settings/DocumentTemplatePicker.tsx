@@ -363,6 +363,38 @@ export function TemplateThumbnail({ meta }: { meta: DocumentTemplateMeta }) {
           <div className="mx-1.5 mt-0.5 ml-auto h-2.5 w-10 rounded-sm bg-rose-600" />
         </ThumbFrame>
       );
+    case "quill":
+      return (
+        <ThumbFrame body="bg-white">
+          <div className="flex justify-between px-1.5 pt-1.5">
+            <div className="h-4 w-4 rounded-sm border border-dashed border-slate-300 bg-slate-50" />
+            <div className="space-y-0.5 text-right">
+              <div className="ml-auto h-2 w-9 rounded-sm bg-slate-900" />
+              <div className="ml-auto h-1 w-5 rounded-sm bg-slate-400" />
+            </div>
+          </div>
+          <div className="mx-1.5 mt-1 space-y-0.5">
+            <div className="h-1 w-10 rounded-sm bg-slate-700" />
+            <div className="h-1 w-8 rounded-sm bg-slate-300" />
+          </div>
+          <div className="mx-1.5 mt-1 grid grid-cols-2 gap-1">
+            <div className="space-y-0.5">
+              <div className="h-1 w-6 rounded-sm bg-slate-400" />
+              <div className="h-1.5 w-9 rounded-sm bg-slate-200" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="ml-auto h-1 w-8 rounded-sm bg-slate-300" />
+              <div className="ml-auto h-1 w-7 rounded-sm bg-slate-300" />
+              <div className="ml-auto h-1 w-6 rounded-sm bg-slate-300" />
+            </div>
+          </div>
+          <TableMini head="bg-slate-900" compact />
+          <div className="mx-1.5 mt-0.5 flex justify-between">
+            <div className="h-2 w-8 rounded-sm bg-slate-100" />
+            <div className="h-2 w-7 rounded-sm bg-slate-800" />
+          </div>
+        </ThumbFrame>
+      );
     default:
       return null;
   }

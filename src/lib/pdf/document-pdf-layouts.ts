@@ -4,6 +4,7 @@ import type { CachetPlacement } from "@/lib/document-cachet-layout";
 import { computeCachetPdfRect } from "@/lib/document-cachet-layout";
 import type { DocumentTheme } from "@/lib/document-theme";
 import { formatMoney, lineTotalTtc } from "@/lib/money";
+import { displayDocumentRef, paymentTermsLabel } from "@/lib/payment-terms";
 import { buildSellerFooterLines } from "@/lib/seller-footer";
 
 export type PdfLine = {
@@ -62,6 +63,7 @@ export type PdfRenderContext = {
   showTtc: boolean;
   dueAmount: number;
   dueLabel: string;
+  currency: string;
   lines: PdfLine[];
 };
 
@@ -301,7 +303,7 @@ function drawSpreadsheetTable(
   const stripeRgb = hexToRgb(theme.surface);
   const colWidths = delivery
     ? [tableW * 0.56, tableW * 0.22, tableW * 0.22]
-    : [tableW * 0.44, tableW * 0.1, tableW * 0.12, tableW * 0.17, tableW * 0.17];
+    : [tableW * 0.42, tableW * 0.08, tableW * 0.12, tableW * 0.19, tableW * 0.19];
   const headers = delivery
     ? ["Désignation", "Unité", "Qté"]
     : ctx.showTtc
@@ -326,7 +328,16 @@ function drawSpreadsheetTable(
   }
   let x = margin + cellPad;
   headers.forEach((h, i) => {
-    doc.text(h, x, y + 5.5);
+    // Match body alignment: designation left, unit centered, amounts right.
+    const isAmountCol = delivery ? i >= 2 : i >= 2;
+    const isUnitCol = !delivery && i === 1;
+    if (isUnitCol) {
+      doc.text(h, x + (colWidths[i] - cellPad) / 2, y + 5.5, { align: "center" });
+    } else if (isAmountCol) {
+      doc.text(h, x + colWidths[i] - cellPad * 2, y + 5.5, { align: "right" });
+    } else {
+      doc.text(h, x, y + 5.5);
+    }
     x += colWidths[i];
   });
   y += 10;
@@ -351,7 +362,7 @@ function drawSpreadsheetTable(
         ];
 
     const wrappedCells = cells.map((cell, i) =>
-      doc.splitTextToSize(String(cell), Math.max(8, colWidths[i] - cellPad)),
+      doc.splitTextToSize(String(cell), Math.max(8, colWidths[i] - cellPad * 2)),
     );
     const maxLines = Math.max(1, ...wrappedCells.map((w) => w.length));
     const rowH = Math.max(8, maxLines * lineHeight + 3);
@@ -364,10 +375,15 @@ function drawSpreadsheetTable(
 
     x = margin + cellPad;
     wrappedCells.forEach((wrapped, i) => {
-      const align = !delivery && i >= 3 ? ("right" as const) : undefined;
-      doc.text(wrapped, x + (align === "right" ? colWidths[i] - cellPad : 0), y + 4, {
-        align,
-      });
+      const isAmountCol = delivery ? i >= 2 : i >= 2;
+      const isUnitCol = !delivery && i === 1;
+      if (isUnitCol) {
+        doc.text(wrapped, x + (colWidths[i] - cellPad) / 2, y + 4, { align: "center" });
+      } else if (isAmountCol) {
+        doc.text(wrapped, x + colWidths[i] - cellPad * 2, y + 4, { align: "right" });
+      } else {
+        doc.text(wrapped, x, y + 4);
+      }
       x += colWidths[i];
     });
     y += rowH;
@@ -975,7 +991,7 @@ function renderExecutive(ctx: PdfRenderContext) {
     doc.setFontSize(7);
     doc.text(ctx.dueLabel.toUpperCase(), 105, y + 10, { align: "center" });
     doc.setFontSize(16);
-    doc.text(`${formatMoney(ctx.dueAmount)} MAD`, 105, y + 19, { align: "center" });
+    doc.text(`${formatMoney(ctx.dueAmount)} ${ctx.currency}`, 105, y + 19, { align: "center" });
     y += 28;
   }
   footerOnDarkBand(ctx, y, 268);
@@ -1209,9 +1225,9 @@ function drawTotalsColumn(ctx: PdfRenderContext, y: number, rightX = 196, width 
   for (const [label, val] of rows) {
     strokeRgb(doc, [226, 232, 240]);
     doc.line(x, cy, rightX, cy);
-    doc.text(label, x + 2, cy + 4.5);
-    doc.text(val, rightX - 2, cy + 4.5, { align: "right" });
-    cy += 6;
+    doc.text(label, x + 2, cy + 5);
+    doc.text(val, rightX - 2, cy + 5, { align: "right" });
+    cy += 7.5;
   }
 
   fillPrimary(ctx);
@@ -1220,7 +1236,7 @@ function drawTotalsColumn(ctx: PdfRenderContext, y: number, rightX = 196, width 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.text(ctx.showTtc ? "Total TTC" : "Total HT", x + 2, cy + 5.5);
-  doc.text(`${formatMoney(ctx.dueAmount)} MAD`, rightX - 2, cy + 5.5, { align: "right" });
+  doc.text(`${formatMoney(ctx.dueAmount)} ${ctx.currency}`, rightX - 2, cy + 5.5, { align: "right" });
   return cy + 12;
 }
 
@@ -1243,7 +1259,7 @@ function drawTotalsMinimalRight(ctx: PdfRenderContext, y: number) {
   for (const [label, val] of rows) {
     doc.text(label, margin + 90, y, { align: "right" });
     doc.text(val, 196, y, { align: "right" });
-    y += 5;
+    y += 7;
   }
   strokeRgb(doc, theme.primaryDarkRgb);
   doc.setLineWidth(0.6);
@@ -1279,7 +1295,7 @@ function drawTotalsInterim(ctx: PdfRenderContext, y: number) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.text(ctx.showTtc ? "TOTAL" : "TOTAL HT", 168, y + 6.5, { align: "right" });
-  doc.text(`${formatMoney(ctx.dueAmount)} MAD`, valX, y + 6.5, { align: "right" });
+  doc.text(`${formatMoney(ctx.dueAmount)} ${ctx.currency}`, valX, y + 6.5, { align: "right" });
   return y + 14;
 }
 
@@ -1331,7 +1347,7 @@ function drawTotalsBlueproRight(ctx: PdfRenderContext, y: number, x: number, wid
   doc.line(x, y, x + width, y);
   doc.setFont("helvetica", "bold");
   doc.text("Total", x, y + 5);
-  doc.text(`${formatMoney(ctx.dueAmount)} MAD`, x + width, y + 5, { align: "right" });
+  doc.text(`${formatMoney(ctx.dueAmount)} ${ctx.currency}`, x + width, y + 5, { align: "right" });
   return y + 10;
 }
 
@@ -1374,7 +1390,7 @@ function drawTotalsGeometric(ctx: PdfRenderContext, y: number) {
   doc.text(ctx.dueLabel, 162, y + 4, { align: "center" });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text(`${formatMoney(ctx.dueAmount)} MAD`, 162, y + 11, { align: "center" });
+  doc.text(`${formatMoney(ctx.dueAmount)} ${ctx.currency}`, 162, y + 11, { align: "center" });
   return y + 18;
 }
 
@@ -1394,7 +1410,7 @@ function drawTotalsFreshCenter(ctx: PdfRenderContext, y: number) {
   doc.text(formatMoney(ctx.showTtc ? totalTtc : ctx.dueAmount), 105, y + 12, { align: "center" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.text(`${ctx.dueLabel} : ${formatMoney(ctx.dueAmount)} MAD`, 105, y + 18, { align: "center" });
+  doc.text(`${ctx.dueLabel} : ${formatMoney(ctx.dueAmount)} ${ctx.currency}`, 105, y + 18, { align: "center" });
   return y + h + 4;
 }
 
@@ -1685,7 +1701,7 @@ function renderSlate(ctx: PdfRenderContext) {
     y = drawAdjustments(ctx, y);
     doc.setFont("helvetica", "bold");
     doc.text(
-      `Montant total dû : ${formatMoney(ctx.dueAmount)} MAD${ctx.showTtc ? " TTC" : " HT"}.`,
+      `Montant total dû : ${formatMoney(ctx.dueAmount)} ${ctx.currency}${ctx.showTtc ? " TTC" : " HT"}.`,
       margin,
       y + 4,
     );
@@ -1768,7 +1784,7 @@ function renderRoyal(ctx: PdfRenderContext) {
     doc.text(ctx.dueLabel.toUpperCase(), 105, y + 10, { align: "center" });
     textPrimaryDark(ctx);
     doc.setFontSize(13);
-    doc.text(`${formatMoney(ctx.dueAmount)} MAD`, 105, y + 17, { align: "center" });
+    doc.text(`${formatMoney(ctx.dueAmount)} ${ctx.currency}`, 105, y + 17, { align: "center" });
     y += 26;
   }
   finishLayout(ctx, y);
@@ -2086,13 +2102,7 @@ function renderStudio(ctx: PdfRenderContext) {
 }
 
 function paymentTermsLabelPdf(date?: string, dueDate?: string): string {
-  if (!date || !dueDate) return "—";
-  const start = new Date(`${date}T12:00:00`);
-  const end = new Date(`${dueDate}T12:00:00`);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "—";
-  const days = Math.round((end.getTime() - start.getTime()) / 86_400_000);
-  if (days <= 0) return "Comptant";
-  return `Net ${days}`;
+  return paymentTermsLabel(date, dueDate);
 }
 
 function renderLedger(ctx: PdfRenderContext) {
@@ -2614,7 +2624,7 @@ function renderRuby(ctx: PdfRenderContext) {
       doc.text(k, labelX, y, { align: "right" });
       textRgb(doc, [51, 65, 85]);
       doc.text(v, rightX, y, { align: "right" });
-      y += 5;
+      y += 7.5;
     }
     y += 2;
     fillPrimary(ctx);
@@ -2651,6 +2661,140 @@ function renderRuby(ctx: PdfRenderContext) {
   finishLayout(ctx, y + 2);
 }
 
+function renderQuill(ctx: PdfRenderContext) {
+  const { doc, margin, label, number, sellerName, sellerActivity, sellerAddress, theme } = ctx;
+  const rightX = 196;
+  let y = margin;
+
+  // Header: logo left, title + # right
+  const hasLogo = !!ctx.logoDataUrl;
+  const logo = drawLogo(ctx, margin, y, hasLogo ? 36 : 24, hasLogo ? 24 : 18);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(label.toUpperCase(), rightX, y + 6, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  textRgb(doc, [100, 116, 139]);
+  doc.text(`# ${number}`, rightX, y + 13, { align: "right" });
+
+  let leftY = y + Math.max(logo.h, 16) + 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(sellerName, margin, leftY);
+  leftY += 4.5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  textRgb(doc, [100, 116, 139]);
+  if (sellerActivity) {
+    doc.text(sellerActivity, margin, leftY);
+    leftY += 3.6;
+  }
+  if (sellerAddress) {
+    const addrLines = doc.splitTextToSize(sellerAddress, 90);
+    for (const line of addrLines.slice(0, 3)) {
+      doc.text(line, margin, leftY);
+      leftY += 3.4;
+    }
+  }
+
+  y = leftY + 8;
+
+  // Bill to left + meta right
+  const metaX = 130;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  textRgb(doc, [148, 163, 184]);
+  doc.text(ctx.counterpartyLabel, margin, y);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  textRgb(doc, [15, 23, 42]);
+  doc.text(ctx.counterpartyName || "—", margin, y + 5);
+
+  let partyY = y + 10;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  textRgb(doc, [100, 116, 139]);
+  if (ctx.counterpartyIce) {
+    doc.text(`ICE : ${ctx.counterpartyIce}`, margin, partyY);
+    partyY += 3.6;
+  }
+  const partyAddr = [ctx.counterpartyAddress, ctx.counterpartyCity].filter(Boolean).join(", ");
+  if (partyAddr) {
+    const addr = doc.splitTextToSize(partyAddr, 95);
+    doc.text(addr, margin, partyY);
+    partyY += addr.length * 3.4;
+  }
+
+  const terms = paymentTermsLabelPdf(ctx.date, ctx.dueDate);
+  const metaRows: [string, string][] = [
+    ["Date", ctx.dateFormatted],
+    ["Conditions", terms],
+  ];
+  if (ctx.dueDateFormatted) metaRows.push(["Échéance", ctx.dueDateFormatted]);
+  metaRows.push(["Réf.", displayDocumentRef(ctx.reference, ctx.number)]);
+
+  let metaY = y;
+  for (const [k, v] of metaRows) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    textRgb(doc, [100, 116, 139]);
+    doc.text(k, metaX, metaY);
+    doc.setFont("helvetica", "bold");
+    textRgb(doc, [15, 23, 42]);
+    doc.text(v, rightX, metaY, { align: "right" });
+    metaY += 5.5;
+  }
+
+  y = Math.max(partyY, metaY) + 8;
+  y = drawSpreadsheetTable(ctx, y, { headRgb: theme.primaryDarkRgb });
+
+  if (!ctx.delivery) {
+    const notesStart = y;
+    if (ctx.notes.trim()) {
+      y = drawNotes(ctx, y + 2, { maxWidth: 95 });
+    }
+
+    let totalsY = notesStart + 2;
+    const labelX = 130;
+    doc.setFontSize(8);
+    totalsY = drawAdjustments({ ...ctx, margin: labelX }, totalsY);
+
+    const rows: [string, string, boolean?][] = [
+      ["Sous-total", formatMoney(ctx.totalHt)],
+      [`TVA (${ctx.vatRate}%)`, formatMoney(ctx.vatAmount)],
+    ];
+    if (ctx.showTtc) {
+      rows.push(["Total", formatMoney(ctx.totalTtc)]);
+    }
+    rows.push([ctx.showTtc ? "Solde dû" : ctx.dueLabel, formatMoney(ctx.dueAmount), true]);
+
+    for (const [k, v, bold] of rows) {
+      if (bold) {
+        strokeRgb(doc, [226, 232, 240]);
+        doc.setLineWidth(0.35);
+        doc.line(labelX, totalsY - 3, rightX, totalsY - 3);
+        totalsY += 2.5;
+      }
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      textRgb(doc, bold ? [15, 23, 42] : [100, 116, 139]);
+      doc.text(k, labelX, totalsY);
+      textRgb(doc, [15, 23, 42]);
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.text(v, rightX, totalsY, { align: "right" });
+      totalsY += 7.5;
+    }
+
+    y = Math.max(y, totalsY) + 4;
+  } else if (ctx.notes.trim()) {
+    y = drawNotes(ctx, y + 2);
+  }
+
+  finishLayout(ctx, y);
+}
+
 export const PDF_LAYOUT_RENDERERS: Record<DocumentTemplateId, LayoutRenderer> = {
   classic: renderClassic,
   modern: renderModern,
@@ -2671,6 +2815,7 @@ export const PDF_LAYOUT_RENDERERS: Record<DocumentTemplateId, LayoutRenderer> = 
   ledger: renderLedger,
   folio: renderFolio,
   ruby: renderRuby,
+  quill: renderQuill,
 };
 
 export function renderPdfLayout(templateId: DocumentTemplateId, ctx: PdfRenderContext) {

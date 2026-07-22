@@ -27,6 +27,11 @@ export type EnrichedDocument = {
   amountDisplay?: import("@/lib/documents").AmountDisplay;
   clientId?: string;
   supplierId?: string;
+  guestClientName?: string;
+  guestSupplierName?: string;
+  guestIce?: string;
+  guestAddress?: string;
+  guestCity?: string;
   totalHt: number;
   lines: Array<{
     catalogItemId?: string;
@@ -73,6 +78,8 @@ export type CompanySettings = {
   cachetStorageId?: string;
   documentTemplate?: import("@/lib/document-templates").DocumentTemplateId;
   documentColor?: import("@/lib/document-colors").DocumentColorId;
+  currency?: string;
+  documentLanguage?: string;
 };
 
 export type CatalogItem = {
