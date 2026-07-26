@@ -12,6 +12,14 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "FINANCE CRM",
   description: "Gestion documentaire commerciale — devis, factures, bons de commande",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
