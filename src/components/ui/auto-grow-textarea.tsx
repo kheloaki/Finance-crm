@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -25,7 +26,7 @@ export function AutoGrowTextarea({
 }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
-  function resize() {
+  const resize = useCallback(() => {
     const el = ref.current;
     if (!el) return;
 
@@ -54,11 +55,11 @@ export function AutoGrowTextarea({
     // Collapse first so scrollHeight reflects wrapped content at current width.
     el.style.height = "0px";
     el.style.height = `${Math.max(minHeight, el.scrollHeight)}px`;
-  }
+  }, [minRows]);
 
   useLayoutEffect(() => {
     resize();
-  }, [value, minRows]);
+  }, [value, resize]);
 
   useEffect(() => {
     const el = ref.current;
@@ -68,7 +69,7 @@ export function AutoGrowTextarea({
     // Parent width changes (table column) also need a remeasure.
     if (el.parentElement) ro.observe(el.parentElement);
     return () => ro.disconnect();
-  }, [minRows]);
+  }, [resize]);
 
   const mergedStyle: CSSProperties = {
     minHeight: `${minRows * 1.35}em`,

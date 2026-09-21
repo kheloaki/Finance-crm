@@ -296,7 +296,7 @@ function drawSpreadsheetTable(
   y: number,
   opts?: { headRgb?: [number, number, number]; margin?: number; minimalHead?: boolean },
 ) {
-  const { doc, delivery, lines, vatRate, theme } = ctx;
+  const { doc, delivery, lines, theme } = ctx;
   const margin = opts?.margin ?? ctx.margin;
   const tableW = 196 - margin;
   const headRgb = opts?.headRgb ?? theme.primaryDarkRgb;
@@ -408,7 +408,7 @@ function drawSpreadsheetTable(
 }
 
 function drawListLines(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, delivery, lines, vatRate, theme } = ctx;
+  const { doc, margin, delivery, lines, theme } = ctx;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   textRgb(doc, [17, 24, 39]);
@@ -453,7 +453,7 @@ function drawListLines(ctx: PdfRenderContext, y: number) {
 
 /** Card-style lines — matches preview Modern / Fresh layouts */
 function drawLineCards(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, delivery, lines, vatRate, theme } = ctx;
+  const { doc, margin, delivery, lines, theme } = ctx;
   const cardH = 12;
   const gap = 1.5;
 
@@ -506,7 +506,7 @@ function drawLineCards(ctx: PdfRenderContext, y: number) {
 
 /** Fresh preview — designation + TTC price pills */
 function drawFreshLineCards(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, delivery, lines, vatRate, theme } = ctx;
+  const { doc, margin, delivery, lines, theme } = ctx;
   for (const line of lines) {
     if (y > 255) {
       doc.addPage();
@@ -547,7 +547,7 @@ function drawFreshLineCards(ctx: PdfRenderContext, y: number) {
 
 /** Warm preview — magazine lines with ref · qty */
 function drawWarmLines(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, delivery, lines, vatRate, theme } = ctx;
+  const { doc, margin, delivery, lines, theme } = ctx;
   for (const line of lines) {
     if (y > 258) {
       doc.addPage();
@@ -585,7 +585,7 @@ function drawWarmLines(ctx: PdfRenderContext, y: number) {
 
 /** Royal preview — Article / Qté / Total */
 function drawRoyalTable(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, delivery, lines, vatRate, theme } = ctx;
+  const { doc, margin, delivery, lines, theme } = ctx;
   fillPrimaryDark(ctx);
   doc.rect(margin + 8, y, 166, 8, "F");
   textOnPrimary(ctx);
@@ -621,7 +621,7 @@ function drawRoyalTable(ctx: PdfRenderContext, y: number) {
 
 /** Gradient 4-cell banner — matches preview TotalsBanner + gradientBannerStyle */
 function drawTotalsBannerGradient(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, totalHt, vatAmount, totalTtc, netToPay, theme } = ctx;
+  const { doc, margin, totalHt, vatAmount, totalTtc, theme } = ctx;
   y = drawAdjustments(ctx, y);
   const h = 16;
   const w = 182;
@@ -671,7 +671,7 @@ function drawTotalsBannerGradient(ctx: PdfRenderContext, y: number) {
 
 /** Classic preview: 2/5 TVA + 3/5 Net à payer with accent label */
 function drawTotalsClassic(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, vatRate, vatAmount, netToPay, theme } = ctx;
+  const { doc, margin, vatRate, vatAmount, theme } = ctx;
   y = drawAdjustments(ctx, y);
   const w = 182;
   const tvaW = w * 0.4;
@@ -1210,7 +1210,7 @@ function withMargin(ctx: PdfRenderContext, margin: number): PdfRenderContext {
 
 /** Totals block — Sous-total / TVA / Total TTC (Stripe & Ocean preview) */
 function drawTotalsColumn(ctx: PdfRenderContext, y: number, rightX = 196, width = 100) {
-  const { doc, totalHt, vatAmount, vatRate, netToPay } = ctx;
+  const { doc, totalHt, vatAmount, vatRate } = ctx;
   const x = rightX - width;
   let cy = y;
 
@@ -1242,7 +1242,7 @@ function drawTotalsColumn(ctx: PdfRenderContext, y: number, rightX = 196, width 
 
 /** Right-aligned HT / TVA / Net — Minimal & Studio previews */
 function drawTotalsMinimalRight(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, totalHt, vatAmount, netToPay, theme } = ctx;
+  const { doc, margin, totalHt, vatAmount, theme } = ctx;
   y = drawAdjustments(ctx, y);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
@@ -1274,7 +1274,7 @@ function drawTotalsMinimalRight(ctx: PdfRenderContext, y: number) {
 
 /** Interim preview — right-aligned rows + TOTAL bar */
 function drawTotalsInterim(ctx: PdfRenderContext, y: number) {
-  const { doc, totalHt, vatAmount, netToPay } = ctx;
+  const { doc, totalHt, vatAmount } = ctx;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   textRgb(doc, [107, 114, 128]);
@@ -1299,38 +1299,10 @@ function drawTotalsInterim(ctx: PdfRenderContext, y: number) {
   return y + 14;
 }
 
-/** Corporate preview — 4-cell totals grid */
-function drawTotalsCorporateGrid(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, totalHt, vatAmount, netToPay, theme } = ctx;
-  const w = 182;
-  const cw = w / 4;
-  fillSurface(ctx);
-  strokeRgb(doc, hexToRgb(theme.surfaceBorder));
-  doc.rect(margin, y, cw * 2, 10);
-  doc.rect(margin + cw * 2, y, cw, 10);
-  doc.rect(margin + cw * 3, y, cw, 10);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  textRgb(doc, [15, 23, 42]);
-  doc.text("Total HT", margin + 2, y + 4);
-  doc.text(formatMoney(totalHt), margin + cw * 2 - 2, y + 4, { align: "right" });
-  doc.text("TVA", margin + cw * 2 + 2, y + 4);
-  doc.text(formatMoney(vatAmount), margin + cw * 4 - 2, y + 4, { align: "right" });
-  y += 10;
-  fillPrimaryDark(ctx);
-  textOnPrimary(ctx);
-  doc.rect(margin, y, cw * 3, 12, "F");
-  doc.rect(margin + cw * 3, y, cw, 12, "F");
-  doc.setFontSize(8);
-  doc.text(ctx.dueLabel.toUpperCase(), margin + 2, y + 7);
-  doc.setFontSize(10);
-  doc.text(formatMoney(ctx.dueAmount), margin + cw * 4 - 2, y + 8, { align: "right" });
-  return y + 16;
-}
 
 /** Bluepro preview — right column totals */
 function drawTotalsBlueproRight(ctx: PdfRenderContext, y: number, x: number, width: number) {
-  const { doc, totalHt, vatAmount, netToPay, theme } = ctx;
+  const { doc, totalHt, vatAmount, theme } = ctx;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   textRgb(doc, [17, 24, 39]);
@@ -1353,7 +1325,7 @@ function drawTotalsBlueproRight(ctx: PdfRenderContext, y: number, x: number, wid
 
 /** Studio preview — Solde dû pill */
 function drawTotalsStudio(ctx: PdfRenderContext, y: number) {
-  const { doc, totalHt, vatAmount, netToPay } = ctx;
+  const { doc, totalHt, vatAmount } = ctx;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   textRgb(doc, [17, 24, 39]);
@@ -1381,7 +1353,7 @@ function drawTotalsStudio(ctx: PdfRenderContext, y: number) {
 
 /** Geometric preview — dark NET box */
 function drawTotalsGeometric(ctx: PdfRenderContext, y: number) {
-  const { doc, netToPay } = ctx;
+  const { doc } = ctx;
   fillRgb(doc, [17, 24, 39]);
   doc.roundedRect(128, y, 68, 14, 2, 2, "F");
   textRgb(doc, [255, 255, 255]);
@@ -1396,7 +1368,7 @@ function drawTotalsGeometric(ctx: PdfRenderContext, y: number) {
 
 /** Fresh preview — centered gradient TTC / Net */
 function drawTotalsFreshCenter(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, totalTtc, netToPay, theme } = ctx;
+  const { doc, margin, totalTtc, theme } = ctx;
   const w = 142;
   const h = 22;
   const x = margin + 20;
@@ -1416,7 +1388,7 @@ function drawTotalsFreshCenter(ctx: PdfRenderContext, y: number) {
 
 /** Executive preview — Description / Qté / Montant table */
 function drawExecutiveTable(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, delivery, lines, vatRate, theme } = ctx;
+  const { doc, margin, delivery, lines, theme } = ctx;
   strokeRgb(doc, theme.primaryDarkRgb);
   doc.setLineWidth(0.5);
   doc.line(margin, y, 196, y);
@@ -2214,7 +2186,7 @@ function renderLedger(ctx: PdfRenderContext) {
 }
 
 function drawFolioSoftTable(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, delivery, lines, vatRate } = ctx;
+  const { doc, margin, delivery, lines } = ctx;
   const tableW = 196 - margin;
   const colNum = 8;
   const colQty = 18;
@@ -2443,7 +2415,7 @@ function renderFolio(ctx: PdfRenderContext) {
 }
 
 function drawRubySoftTable(ctx: PdfRenderContext, y: number) {
-  const { doc, margin, delivery, lines, vatRate, theme } = ctx;
+  const { doc, margin, delivery, lines, theme } = ctx;
   const tableW = 196 - margin;
   const colNum = 8;
   const colQty = 16;
