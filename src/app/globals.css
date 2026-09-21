@@ -196,3 +196,75 @@ body {
     animation: none;
   }
 }
+
+/* Public landing */
+.landing-root {
+  background: #e8eef5;
+}
+
+.landing-atmosphere {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 55% at 15% 0%, rgba(56, 189, 248, 0.28), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 20%, rgba(16, 185, 129, 0.2), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 70% 100%, rgba(37, 99, 235, 0.12), transparent 50%),
+    linear-gradient(165deg, #f4f7fb 0%, #e7eef6 48%, #dde7f1 100%);
+}
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-invoice-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.landing-fade-1,
+.landing-fade-2,
+.landing-fade-3,
+.landing-fade-4 {
+  animation: landing-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.landing-fade-1 {
+  animation-delay: 0.05s;
+}
+.landing-fade-2 {
+  animation-delay: 0.14s;
+}
+.landing-fade-3 {
+  animation-delay: 0.24s;
+}
+.landing-fade-4 {
+  animation-delay: 0.34s;
+}
+
+.landing-invoice {
+  animation: landing-invoice-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-fade-1,
+  .landing-fade-2,
+  .landing-fade-3,
+  .landing-fade-4,
+  .landing-invoice {
+    animation: none;
+  }
+}
